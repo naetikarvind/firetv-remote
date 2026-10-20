@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="16" fill="#001A2C"/>
+  <text x="32" y="28" font-family="-apple-system, sans-serif" font-size="14" font-weight="900" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.5">prime</text>
+  <text x="32" y="37" font-family="-apple-system, sans-serif" font-size="9" font-weight="600" fill="#00A8E1" text-anchor="middle" letter-spacing="1">VIDEO</text>
+  <path d="M18 43 c 9 6, 19 6, 27 0" fill="none" stroke="#FF9900" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M45 42 l 3 1.5 l -1.5 -3.5 z" fill="#FF9900"/>
+</svg>

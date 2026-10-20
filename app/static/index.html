@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FireRemote">
+  <meta name="theme-color" content="#0d0f14">
+  <title>Fire TV Remote Pro</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div id="app" class="app-container">
+    <!-- Top Header -->
+    <header class="header">
+      <div class="brand">
+        <div class="logo-wrapper">
+          <svg class="flame-icon" viewBox="0 0 24 24" width="22" height="22">
+            <path fill="url(#fireGradient)" d="M12 23c-4.97 0-9-4.03-9-9 0-4.09 3.09-8.49 5.86-11.23.4-.4 1.07-.15 1.11.41.22 3.12 2.29 4.7 3.53 4.82.35.03.65-.24.62-.59-.2-2.15.54-4.5 2.1-5.91.42-.38 1.09-.1 1.11.46.12 3.73 2.13 6.04 3.67 7.04.4.26.54.77.34 1.2A9.01 9.01 0 0 1 12 23z"/>
+            <defs>
+              <linearGradient id="fireGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff3d00"/>
+                <stop offset="100%" stop-color="#ff9100"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span class="brand-title">Fire TV <span class="badge-pro">PRO</span></span>
+      </div>
+
+      <div class="header-actions">
+        <button id="statusBtn" class="status-pill disconnected" title="Connection Settings">
+          <span class="status-dot"></span>
+          <span id="statusText">Disconnected</span>
+        </button>
+
+        <button id="desktopModeBtn" class="icon-btn" title="Toggle Desktop Studio / Compact Remote" aria-label="Desktop Studio">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2"/>
+            <line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+        </button>
+
+        <button id="mobileQrBtn" class="icon-btn" title="Open on Mobile Phone" aria-label="Open on Mobile">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="5" y="2" width="14" height="20" rx="3" ry="3"/>
+            <line x1="12" y1="18" x2="12" y2="18.01"/>
+          </svg>
+        </button>
+
+        <button id="helpBtn" class="icon-btn" title="How to Setup ADB" aria-label="Setup Guide">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </button>
+
+        <button id="powerBtn" class="icon-btn power-btn" title="Power On/Off" aria-label="Power">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.3">
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+            <line x1="12" y1="2" x2="12" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- TV Info / Focused App Bar -->
+    <div id="deviceBar" class="device-bar hidden">
+      <div class="device-info-left">
+        <span id="deviceModel" class="device-model">Amazon Fire TV</span>
+        <span id="deviceApp" class="device-app">Home</span>
+      </div>
+      <button id="changeDeviceBtn" class="btn-text">Switch</button>
+    </div>
+
+    <!-- Authorization Required Alert Banner -->
+    <div id="authAlert" class="auth-alert hidden">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-body">
+        <strong>Fire TV Authorization Needed</strong>
+        <p>Look at your TV screen! Select <em>"Always allow from this computer"</em> and press <strong>OK</strong> with your physical remote.</p>
+      </div>
+      <button id="authRetryBtn" class="btn-retry">I Allowed It</button>
+    </div>
+
+    <!-- ADB Disabled Alert Banner with Live Watcher -->
+    <div id="adbAlert" class="auth-alert hidden" style="border-color: rgba(255, 87, 34, 0.4); background: rgba(255, 87, 34, 0.12); color: #ffccbc;">
+      <div class="alert-icon">⚡</div>
+      <div class="alert-body">
+        <strong id="adbAlertTitle" style="color: #ffab91;">ADB Debugging is OFF on your Fire TV</strong>
+        <p id="adbAlertDesc" style="color: #ffe0b2;">To connect, go to <strong>Settings ⚙️ &rarr; My Fire TV &rarr; Developer Options &rarr; ADB Debugging &rarr; ON</strong>.</p>
+        <div id="adbLivePoll" style="font-size:0.75rem; color:#ffb74d; margin-top:6px; display:flex; align-items:center; gap:6px;">
+          <span class="status-dot" style="background:#ff9800; animation:pulse 1s infinite alternate;"></span>
+          <span id="adbPollStatus">Watching in real-time... turn ON the toggle on your TV</span>
+        </div>
+      </div>
+      <button id="showGuideBtn" class="btn-retry" style="background:#ff5722; color:#fff;">Show Steps</button>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="remote">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="7" y="2" width="10" height="20" rx="3"/>
+          <circle cx="12" cy="7" r="1.5"/>
+          <line x1="12" y1="12" x2="12" y2="16"/>
+        </svg>
+        <span>Remote</span>
+      </button>
+      <button class="nav-tab" data-tab="trackpad">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="16" rx="3"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span>Trackpad</span>
+      </button>
+      <button class="nav-tab" data-tab="keyboard">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <line x1="6" y1="8" x2="6" y2="8.01"/>
+          <line x1="10" y1="8" x2="10" y2="8.01"/>
+          <line x1="14" y1="8" x2="14" y2="8.01"/>
+          <line x1="18" y1="8" x2="18" y2="8.01"/>
+          <line x1="7" y1="12" x2="17" y2="12"/>
+          <line x1="6" y1="16" x2="18" y2="16"/>
+        </svg>
+        <span>Keyboard</span>
+      </button>
+      <button class="nav-tab" data-tab="apps">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+        </svg>
+        <span>Apps</span>
+      </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- 1. TAB: REMOTE (D-PAD) -->
+      <section id="tab-remote" class="tab-pane active">
+        <div class="remote-deck">
+          <!-- Circular D-Pad Controller -->
+          <div class="dpad-container">
+            <div class="dpad-disc">
+              <!-- Up -->
+              <button class="dpad-btn dpad-up" data-key="UP" aria-label="Up">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="18 15 12 9 6 15"/>
+                </svg>
+              </button>
+              <!-- Down -->
+              <button class="dpad-btn dpad-down" data-key="DOWN" aria-label="Down">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+              <!-- Left -->
+              <button class="dpad-btn dpad-left" data-key="LEFT" aria-label="Left">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+              </button>
+              <!-- Right -->
+              <button class="dpad-btn dpad-right" data-key="RIGHT" aria-label="Right">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+              <!-- Center OK / Select -->
+              <button class="dpad-center" data-key="SELECT" aria-label="Select / OK">
+                <span>OK</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="remote-actions-group">
+            <!-- System Controls Row (Back, Home, Menu) -->
+            <div class="controls-row system-row">
+              <button class="remote-btn round-btn" data-key="BACK" title="Back" aria-label="Back">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4">
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                <span class="btn-label">Back</span>
+              </button>
+
+              <button class="remote-btn round-btn primary-btn" data-key="HOME" title="Home" aria-label="Home">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                  <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+                <span class="btn-label">Home</span>
+              </button>
+
+              <button class="remote-btn round-btn" data-key="MENU" title="Options / Menu" aria-label="Menu">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4">
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="6" x2="21" y2="6"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+                <span class="btn-label">Menu</span>
+              </button>
+            </div>
+
+            <!-- Volume & Mute Row -->
+            <div class="controls-row volume-pill-container">
+              <div class="volume-pill">
+                <button class="vol-btn" data-key="VOLUME_DOWN" title="Volume Down" aria-label="Volume Down">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                </button>
+                <button class="vol-btn vol-mute" data-key="MUTE" title="Mute" aria-label="Mute">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                    <line x1="23" y1="9" x2="17" y2="15"/>
+                    <line x1="17" y1="9" x2="23" y2="15"/>
+                  </svg>
+                </button>
+                <button class="vol-btn" data-key="VOLUME_UP" title="Volume Up" aria-label="Volume Up">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Media Playback Row -->
+            <div class="controls-row media-row">
+              <button class="remote-btn round-btn" data-key="REWIND" title="Rewind" aria-label="Rewind">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                  <polygon points="11 19 2 12 11 5 11 19"/>
+                  <polygon points="22 19 13 12 22 5 22 19"/>
+                </svg>
+              </button>
+
+              <button class="remote-btn round-btn play-pause-btn" data-key="PLAY_PAUSE" title="Play / Pause" aria-label="Play / Pause">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+              </button>
+
+              <button class="remote-btn round-btn" data-key="FAST_FORWARD" title="Fast Forward" aria-label="Fast Forward">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                  <polygon points="13 19 22 12 13 5 13 19"/>
+                  <polygon points="2 19 11 12 2 5 2 19"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DESKTOP STUDIO TV MONITOR -->
+      <section id="studioTvMonitor" class="studio-tv-monitor">
+        <div class="tv-bezel">
+          <div class="tv-screen-frame" id="tvScreenFrame">
+            <img id="tvScreenImg" class="tv-screen-img" src="/api/screenshot" alt="Live Fire TV Display" loading="eager">
+            <div id="tvScreenPlaceholder" class="tv-screen-placeholder">
+              <div class="tv-scanlines"></div>
+              <div class="tv-screen-empty-content">
+                <div class="tv-antenna-icon">
+                  <svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="2" y="7" width="20" height="15" rx="3" ry="3"/>
+                    <polyline points="17 2 12 7 7 2"/>
+                  </svg>
+                </div>
+                <strong id="tvPlaceholderTitle">Live TV Mirror Display</strong>
+                <p id="tvPlaceholderSubtitle">Connect to your Fire TV to stream the display</p>
+                <button id="tvConnectPromptBtn" class="btn-secondary">Check Connection</button>
+              </div>
+            </div>
+            <div class="tv-screen-glare"></div>
+            <div class="tv-status-badge">
+              <span class="live-dot" id="tvLiveDot"></span>
+              <span id="tvStatusLabel">1080p FHD</span>
+            </div>
+          </div>
+          <div class="tv-controls-bar">
+            <button id="tvRefreshBtn" class="tv-btn" title="Capture Fresh Screen Snapshot">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 4v6h-6M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+              </svg>
+              <span>Capture</span>
+            </button>
+            <button id="tvLiveSyncBtn" class="tv-btn active" title="Toggle Real-Time Display Sync">
+              <span class="sync-pulse"></span>
+              <span id="tvLiveSyncText">Live Sync: ON</span>
+            </button>
+            <button id="tvFullscreenBtn" class="tv-btn icon-only" title="Full Screen TV Preview">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. TAB: TRACKPAD -->
+      <section id="tab-trackpad" class="tab-pane">
+        <div class="trackpad-wrapper">
+          <div id="trackpadSurface" class="trackpad-surface">
+            <div class="trackpad-hint">
+              <div class="touch-icon">👆</div>
+              <span>Swipe to Navigate</span>
+              <small>Tap for OK • Two-finger tap for Back</small>
+            </div>
+            <div id="trackpadRipple" class="trackpad-ripple"></div>
+          </div>
+          <!-- Quick action bar below trackpad -->
+          <div class="trackpad-footer">
+            <button class="remote-btn mini-btn" data-key="BACK">Back</button>
+            <button class="remote-btn mini-btn primary-btn" data-key="HOME">Home</button>
+            <button class="remote-btn mini-btn" data-key="MENU">Menu</button>
+            <button class="remote-btn mini-btn" data-key="PLAY_PAUSE">⏯</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. TAB: KEYBOARD -->
+      <section id="tab-keyboard" class="tab-pane">
+        <div class="keyboard-pane">
+          <div class="keyboard-card">
+            <h3>Type & Search on Fire TV</h3>
+            <p>Send text directly to any search bar or login screen on your Fire TV without typing letter by letter with a remote.</p>
+
+            <div class="input-group">
+              <input type="text" id="textInput" placeholder="Type text or paste URL / search query..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+              <button id="clearTextBtn" class="clear-btn" title="Clear">✕</button>
+            </div>
+
+            <div class="keyboard-actions">
+              <button id="sendTextBtn" class="btn-primary-action">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+                Send to Fire TV
+              </button>
+            </div>
+
+            <div class="quick-keys-grid">
+              <button class="quick-key-btn" data-key="SEARCH">🔍 Search</button>
+              <button class="quick-key-btn" data-key="ENTER">↵ Enter / Done</button>
+              <button class="quick-key-btn" data-key="BACKSPACE">⌫ Backspace</button>
+              <button class="quick-key-btn" data-key="SPACE">␣ Space</button>
+            </div>
+
+            <!-- Interactive Desktop Keyboard Hotkeys Deck -->
+            <div class="desktop-hotkeys-box">
+              <div class="hotkeys-header">
+                <strong>⌨️ Hardware Keyboard Controls</strong>
+                <span class="hotkeys-hint">Keys light up when pressed on your keyboard</span>
+              </div>
+              <div class="hotkeys-grid">
+                <div class="hotkey-chip" data-hotkey="ArrowUp"><kbd>▲</kbd><span>Up</span></div>
+                <div class="hotkey-chip" data-hotkey="ArrowDown"><kbd>▼</kbd><span>Down</span></div>
+                <div class="hotkey-chip" data-hotkey="ArrowLeft"><kbd>◀</kbd><span>Left</span></div>
+                <div class="hotkey-chip" data-hotkey="ArrowRight"><kbd>▶</kbd><span>Right</span></div>
+                <div class="hotkey-chip" data-hotkey="Enter"><kbd>↵ Enter</kbd><span>OK</span></div>
+                <div class="hotkey-chip" data-hotkey="Escape"><kbd>Esc</kbd><span>Back</span></div>
+                <div class="hotkey-chip" data-hotkey="KeyH"><kbd>H</kbd><span>Home</span></div>
+                <div class="hotkey-chip" data-hotkey="KeyM"><kbd>M</kbd><span>Menu</span></div>
+                <div class="hotkey-chip" data-hotkey="Space"><kbd>Space</kbd><span>Play</span></div>
+                <div class="hotkey-chip" data-hotkey="Equal"><kbd>+</kbd><span>Vol +</span></div>
+                <div class="hotkey-chip" data-hotkey="Minus"><kbd>-</kbd><span>Vol -</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. TAB: APPS -->
+      <section id="tab-apps" class="tab-pane">
+        <div class="apps-pane">
+          <div class="apps-header">
+            <h3>Quick Launch</h3>
+            <span>Open your favorite channels with one tap</span>
+          </div>
+
+          <div id="appsGrid" class="apps-grid">
+            <!-- Populated dynamically via JS -->
+          </div>
+
+          <div class="custom-app-box">
+            <h4>Launch Custom Package</h4>
+            <div class="custom-app-input">
+              <input type="text" id="customPackageInput" placeholder="e.g. com.plexapp.android">
+              <button id="launchCustomBtn" class="btn-secondary">Launch</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Keyboard Shortcuts Helper (Desktop) -->
+    <footer class="desktop-hints">
+      <span>⌨️ Shortcuts: Arrow keys (D-pad), Enter (OK), Esc/Backspace (Back), H (Home), M (Menu), Space (Play/Pause)</span>
+    </footer>
+  </div>
+
+  <!-- MODAL: Device Manager & Network Scanner -->
+  <div id="deviceModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Connect to Fire TV</h3>
+        <button id="closeDeviceModal" class="btn-close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Scan section -->
+        <div class="scan-bar">
+          <div>
+            <strong>Auto Discovery</strong>
+            <p>Search for Fire TVs on your Wi-Fi network</p>
+          </div>
+          <button id="scanBtn" class="btn-scan">
+            <span class="scan-icon">📡</span>
+            <span id="scanBtnText">Scan Network</span>
+          </button>
+        </div>
+
+        <!-- Discovered devices -->
+        <div class="section-title">Discovered Devices</div>
+        <div id="discoveredList" class="device-list">
+          <div class="empty-state">Click "Scan Network" or enter IP below</div>
+        </div>
+
+        <!-- Manual IP Connection -->
+        <div class="section-title">Manual Connection</div>
+        <form id="manualConnectForm" class="manual-form">
+          <div class="form-row">
+            <input type="text" id="manualIpInput" placeholder="192.168.1.xxx" required>
+            <input type="number" id="manualPortInput" value="5555" min="1" max="65535" required style="width: 80px;">
+          </div>
+          <button type="submit" class="btn-primary-action" id="manualConnectBtn">Connect by IP</button>
+        </form>
+
+        <!-- Saved Devices -->
+        <div class="section-title">Saved Devices</div>
+        <div id="savedList" class="device-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Pair Phone QR Code -->
+  <div id="qrModal" class="modal-overlay hidden">
+    <div class="modal-card modal-qr">
+      <div class="modal-header">
+        <h3>Open on Your Phone</h3>
+        <button id="closeQrModal" class="btn-close">✕</button>
+      </div>
+      <div class="modal-body qr-content">
+        <p>Scan with your phone's camera on the same Wi-Fi to use this as a handheld remote:</p>
+        <div id="qrContainer" class="qr-box">
+          <!-- SVG QR Code rendered here -->
+        </div>
+        <div class="qr-url-box">
+          <input type="text" id="qrUrlInput" readonly>
+          <button id="copyUrlBtn" class="btn-secondary">Copy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADB Setup Guide -->
+  <div id="helpModal" class="modal-overlay hidden">
+    <div class="modal-card modal-help">
+      <div class="modal-header">
+        <h3>Enable ADB on Fire TV</h3>
+        <button id="closeHelpModal" class="btn-close">✕</button>
+      </div>
+      <div class="modal-body help-steps">
+        <div class="help-step">
+          <div class="step-num">1</div>
+          <div class="step-desc">
+            <strong>Open Fire TV Settings</strong>
+            <p>From your Fire TV home screen, go to <em>Settings ⚙️ &rarr; My Fire TV &rarr; About</em>.</p>
+          </div>
+        </div>
+
+        <div class="help-step">
+          <div class="step-num">2</div>
+          <div class="step-desc">
+            <strong>Unlock Developer Options</strong>
+            <p>Highlight your Fire TV device name and press the center <strong>Select</strong> button on your remote <strong>7 times</strong> until you see <em>"No need, you are already a developer"</em>.</p>
+          </div>
+        </div>
+
+        <div class="help-step">
+          <div class="step-num">3</div>
+          <div class="step-desc">
+            <strong>Enable ADB Debugging</strong>
+            <p>Go back one screen to <em>My Fire TV</em>, open <strong>Developer Options</strong>, and turn <strong>ADB Debugging &rarr; ON</strong>.</p>
+          </div>
+        </div>
+
+        <div class="help-step">
+          <div class="step-num">4</div>
+          <div class="step-desc">
+            <strong>Authorize Computer on TV</strong>
+            <p>Connect from this app. An on-screen prompt will appear on your TV. Check <em>"Always allow from this computer"</em> and select <strong>OK</strong>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="gotItBtn" class="btn-primary-action">Got It!</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
