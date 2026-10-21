@@ -208,7 +208,7 @@ async def websocket_endpoint(websocket: WebSocket):
             active_connections.remove(websocket)
 
 async def auto_reconnect_worker():
-    """Continuously checks if saved Fire TV has come back online and auto-reconnects."""
+    """Continuously checks if saved Fire TV has come back online and auto-reconnects, with dynamic IP tracking."""
     from app.discovery import check_adb_port
     while True:
         await asyncio.sleep(4.0)
@@ -227,6 +227,23 @@ async def auto_reconnect_worker():
                         if res.get("state") == "connected":
                             print(f"[{logger_name}] Successfully auto-reconnected to {host}:{port}!")
                             await broadcast_status()
+                    else:
+                        # If saved IP is offline, check if Fire TV got a new DHCP IP
+                        counter = getattr(auto_reconnect_worker, "_discovery_counter", 0) + 1
+                        auto_reconnect_worker._discovery_counter = counter
+                        if counter >= 3:  # Every ~12s
+                            auto_reconnect_worker._discovery_counter = 0
+                            from app.discovery import discover_all
+                            devices = await discover_all()
+                            for d in devices:
+                                if d.get("adb_available") and "fire" in (d.get("name", "") + d.get("manufacturer", "")).lower():
+                                    new_ip = d["ip"]
+                                    print(f"[firetv.reconnect] Fire TV discovered on new IP {new_ip}! Connecting...")
+                                    res = await controller.connect(new_ip, 5555)
+                                    if res.get("state") == "connected":
+                                        add_saved_device(new_ip, d.get("name", "Fire TV"), 5555)
+                                        await broadcast_status()
+                                        break
         except Exception as e:
             pass
 

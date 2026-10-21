@@ -436,10 +436,11 @@
           if (oldUrl && oldUrl.startsWith("blob:")) URL.revokeObjectURL(oldUrl);
         }
       } catch (e) {
-        this.isFetching = false;
         if (tvScreenPlaceholder && currentState !== "connected") {
           tvScreenPlaceholder.classList.remove("hidden");
         }
+      } finally {
+        this.isFetching = false;
       }
     },
 
@@ -642,8 +643,10 @@
   function sendKey(key) {
     triggerHaptic(12);
 
-    // Refresh live screen monitor immediately after key interaction
-    TvMonitor.scheduleImmediateRefresh(350);
+    // Refresh live screen monitor only when Desktop Studio is actively viewing the TV screen
+    if (document.body.classList.contains("desktop-studio-active")) {
+      TvMonitor.scheduleImmediateRefresh(400);
+    }
 
     if (isWsConnected && ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: "key", key }));

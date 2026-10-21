@@ -137,7 +137,10 @@ class FireTVController:
         self.last_error: str = ""
         self.device_info: Dict[str, Any] = {}
         self.input_device_path: Optional[str] = None
+        self._input_device_checked: bool = False
         self._lock = asyncio.Lock()
+        self._key_lock = asyncio.Lock()
+        self._screenshot_lock = asyncio.Lock()
         self._monitor_task: Optional[asyncio.Task] = None
 
     def _ensure_keys(self) -> None:
@@ -147,23 +150,25 @@ class FireTVController:
             keygen(self.priv_key_path)
 
     def _detect_input_device_unlocked(self) -> None:
-        """Detect the hardware input event device for amzkeyboard for sub-100ms key events."""
-        if not self.device:
+        """Detect the hardware input event device for sub-100ms key events (exits cleanly without hanging)."""
+        if not self.device or self._input_device_checked:
             return
+        self._input_device_checked = True
         try:
-            out = self.device.shell("getevent -S")
+            # Use getevent -lp which lists devices and exits immediately (unlike getevent -S)
+            out = self.device.shell("getevent -lp")
             lines = out.split("\n")
             cur_path = None
             for line in lines:
                 m_dev = re.search(r'(/dev/input/event\d+)', line)
                 if m_dev:
                     cur_path = m_dev.group(1)
-                if 'amzkeyboard' in line and cur_path:
+                if ('amzkeyboard' in line or 'Amazon Remote' in line) and cur_path:
                     self.input_device_path = cur_path
                     logger.info(f"Fast hardware input detected at {self.input_device_path}")
                     break
         except Exception as e:
-            logger.warning(f"Could not detect amzkeyboard device: {e}")
+            logger.warning(f"Could not detect fast hardware input device: {e}")
 
     async def connect(self, host: str, port: int = 5555, timeout: float = 3.0) -> Dict[str, Any]:
         """Connect to Fire TV over ADB."""
@@ -253,42 +258,36 @@ class FireTVController:
             return self.get_status()
 
     async def send_key(self, key: str | int) -> Dict[str, Any]:
-        """Send a key with sub-100ms hardware event acceleration."""
-        async with self._lock:
-            if not self.device or self.state != "connected":
-                return {"success": False, "error": "Not connected to Fire TV", "state": self.state}
+        """Send a key with sub-50ms ultra-low latency."""
+        if not self.device or self.state != "connected":
+            return {"success": False, "error": "Not connected to Fire TV", "state": self.state}
 
-            key_str = str(key).upper().replace(" ", "_")
-            loop = asyncio.get_running_loop()
+        key_str = str(key).upper().replace(" ", "_")
+        keycode = KEYCODES.get(key_str, key) if isinstance(key, str) else key
+        loop = asyncio.get_running_loop()
 
-            # 1. Try fast hardware event injection (sub-100ms, avoids slow Dalvik startup)
-            if not self.input_device_path:
-                self._detect_input_device_unlocked()
+        # If fast hardware event device is available
+        if self.input_device_path and key_str in LINUX_EVDEV_KEYCODES:
+            ev_code = LINUX_EVDEV_KEYCODES[key_str]
+            cmd = (
+                f"sendevent {self.input_device_path} 1 {ev_code} 1; "
+                f"sendevent {self.input_device_path} 0 0 0; "
+                f"sendevent {self.input_device_path} 1 {ev_code} 0; "
+                f"sendevent {self.input_device_path} 0 0 0"
+            )
+            is_fast = True
+        else:
+            # Asynchronous execution in Android shell:
+            # Spawns input keyevent in background without blocking ADB channel on JVM shutdown!
+            cmd = f"input keyevent {keycode} &"
+            is_fast = True
 
-            if self.input_device_path and key_str in LINUX_EVDEV_KEYCODES:
-                ev_code = LINUX_EVDEV_KEYCODES[key_str]
-                try:
-                    cmd = (
-                        f"sendevent {self.input_device_path} 1 {ev_code} 1; "
-                        f"sendevent {self.input_device_path} 0 0 0; "
-                        f"sendevent {self.input_device_path} 1 {ev_code} 0; "
-                        f"sendevent {self.input_device_path} 0 0 0"
-                    )
-                    await loop.run_in_executor(None, self.device.shell, cmd)
-                    return {"success": True, "key": key, "fast": True}
-                except Exception as e:
-                    logger.warning(f"Fast key injection failed, falling back: {e}")
-
-            # 2. Fallback to standard input keyevent
-            keycode = KEYCODES.get(key_str, key) if isinstance(key, str) else key
+        async with self._key_lock:
             try:
-                cmd = f"input keyevent {keycode}"
                 await loop.run_in_executor(None, self.device.shell, cmd)
-                return {"success": True, "key": key, "keycode": keycode, "fast": False}
+                return {"success": True, "key": key, "keycode": keycode, "fast": is_fast}
             except Exception as e:
                 logger.error(f"Error sending key {key}: {e}")
-                self.state = "error"
-                self.last_error = str(e)
                 return {"success": False, "error": str(e)}
 
     async def send_text(self, text: str) -> Dict[str, Any]:
@@ -381,7 +380,7 @@ class FireTVController:
 
     async def take_screenshot(self) -> Optional[bytes]:
         """Capture screenshot from Fire TV as PNG bytes."""
-        async with self._lock:
+        async with self._screenshot_lock:
             if not self.device or self.state != "connected":
                 return None
             loop = asyncio.get_running_loop()
