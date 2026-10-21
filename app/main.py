@@ -24,6 +24,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Prevent browser from caching static assets so a simple refresh always shows latest code
+@app.middleware("http")
+async def add_no_cache_headers(request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if path == "/" or path.endswith((".html", ".css", ".js", ".png", ".svg", ".json", ".ico")):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
 controller = FireTVController()
 
 # Active WebSocket connections
