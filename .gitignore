@@ -5,3 +5,4 @@ __pycache__/
 keys/
 .DS_Store
 *.log
+config.json
