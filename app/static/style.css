@@ -18,16 +18,28 @@
   --status-yellow: #ffd600;
   --status-red: #ff3d00;
 
+  /* Signature Fire TV & Alexa Colors */
+  --alexa-cyan: #00caff;
+  --alexa-blue: #0077ff;
+  --alexa-glow: rgba(0, 202, 255, 0.45);
+  --alexa-glow-deep: rgba(0, 119, 255, 0.35);
+
+  --metal-home-light: #ffffff;
+  --metal-home-mid: #cbd5e1;
+  --metal-home-dark: #94a3b8;
+  --metal-home-glyph: #0f172a;
+
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Smart Length Defaults (actively calibrated by SmartLengthEngine in JS) */
   --app-actual-height: 100dvh;
-  --smart-dpad-size: clamp(165px, min(32dvh, 56cqi, 245px), 245px);
+  --smart-alexa-height: 40px;
+  --smart-dpad-size: clamp(160px, min(30dvh, 54cqi, 235px), 235px);
   --smart-dpad-center: calc(var(--smart-dpad-size) * 0.38);
-  --smart-btn-size: 54px;
-  --smart-play-btn-size: 62px;
-  --smart-gap: 12px;
+  --smart-btn-size: 52px;
+  --smart-play-btn-size: 60px;
+  --smart-gap: 10px;
   --smart-tv-height: 360px;
 }
 
@@ -546,18 +558,143 @@ body.desktop-studio-active .tab-pane:not(#tab-remote):not(.active) {
   flex-direction: column;
   justify-content: space-evenly;
   align-items: center;
-  padding: 4px 0;
+  padding: clamp(6px, 1.2dvh, 12px) clamp(6px, 2cqi, 12px);
   box-sizing: border-box;
   transform-origin: center center;
   transition: transform 0.15s ease-out;
+  background: linear-gradient(180deg, rgba(22, 28, 41, 0.72) 0%, rgba(11, 15, 23, 0.85) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: clamp(24px, 6cqi, 36px);
+  box-shadow: 0 16px 44px -8px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
-/* Circular D-Pad Controller */
+/* ----------------------------------------------------
+   Alexa Voice Pill (Fire TV Redesign)
+---------------------------------------------------- */
+.alexa-pill-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 2px 0;
+}
+
+.alexa-voice-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: min(100%, 250px);
+  height: var(--smart-alexa-height, 40px);
+  padding: 0 18px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(0, 202, 255, 0.16) 0%, rgba(0, 119, 255, 0.22) 100%);
+  border: 1.5px solid rgba(0, 202, 255, 0.45);
+  box-shadow: 0 4px 18px rgba(0, 202, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  color: #fff;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s var(--ease-spring);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.alexa-voice-btn:hover {
+  background: linear-gradient(135deg, rgba(0, 202, 255, 0.28) 0%, rgba(0, 119, 255, 0.36) 100%);
+  border-color: rgba(0, 202, 255, 0.85);
+  box-shadow: 0 6px 24px rgba(0, 202, 255, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.alexa-voice-btn:active,
+.alexa-voice-btn.btn-pressed {
+  transform: scale(0.94) !important;
+  background: linear-gradient(135deg, #00caff 0%, #0077ff 100%) !important;
+  border-color: #00caff !important;
+  box-shadow: 0 0 28px rgba(0, 202, 255, 0.75) !important;
+  color: #fff !important;
+}
+
+.alexa-icon-group {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  z-index: 1;
+}
+
+.alexa-mic-svg {
+  color: var(--alexa-cyan);
+  filter: drop-shadow(0 0 6px rgba(0, 202, 255, 0.6));
+  transition: color 0.15s ease;
+}
+
+.alexa-voice-btn:active .alexa-mic-svg,
+.alexa-voice-btn.btn-pressed .alexa-mic-svg {
+  color: #fff;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+}
+
+.alexa-soundwave {
+  display: flex;
+  align-items: center;
+  gap: 2.5px;
+  height: 14px;
+}
+
+.wave-bar {
+  width: 2.5px;
+  background: var(--alexa-cyan);
+  border-radius: 2px;
+  box-shadow: 0 0 5px rgba(0, 202, 255, 0.6);
+  animation: alexaWave 1.4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.wave-bar.bar-1 { height: 6px;  animation-delay: 0.0s; }
+.wave-bar.bar-2 { height: 13px; animation-delay: 0.2s; }
+.wave-bar.bar-3 { height: 15px; animation-delay: 0.4s; }
+.wave-bar.bar-4 { height: 8px;  animation-delay: 0.1s; }
+
+@keyframes alexaWave {
+  0%, 100% { transform: scaleY(0.45); opacity: 0.65; }
+  50% { transform: scaleY(1.15); opacity: 1; }
+}
+
+.alexa-voice-btn:active .wave-bar,
+.alexa-voice-btn.btn-pressed .wave-bar {
+  background: #fff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
+}
+
+.alexa-label {
+  font-size: clamp(0.78rem, 2.2cqi, 0.88rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #f0f6fc;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  z-index: 1;
+}
+
+.alexa-cyan-aura {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(0, 202, 255, 0.15) 0%, transparent 75%);
+  opacity: 0.7;
+}
+
+/* ----------------------------------------------------
+   Circular D-Pad Controller
+---------------------------------------------------- */
 .dpad-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 4px 0;
+  padding: 3px 0;
   flex-shrink: 0;
 }
 
@@ -566,10 +703,19 @@ body.desktop-studio-active .tab-pane:not(#tab-remote):not(.active) {
   height: var(--smart-dpad-size);
   border-radius: 50%;
   position: relative;
-  background: radial-gradient(circle, #252b3b 0%, #151822 100%);
-  border: 2px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.06);
+  background: radial-gradient(circle at 50% 50%, #202636 0%, #131722 65%, #0a0d14 100%);
+  border: 2px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.55), inset 0 2px 4px rgba(255, 255, 255, 0.08), inset 0 -2px 6px rgba(0, 0, 0, 0.4);
   flex-shrink: 0;
+}
+
+.dpad-disc::before {
+  content: "";
+  position: absolute;
+  inset: calc(var(--smart-dpad-size) * 0.16);
+  border: 1px dashed rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .dpad-btn {
@@ -587,12 +733,13 @@ body.desktop-studio-active .tab-pane:not(#tab-remote):not(.active) {
 .dpad-btn:active,
 .dpad-btn.btn-pressed {
   color: var(--accent-orange) !important;
-  background: rgba(255, 87, 34, 0.12) !important;
+  background: rgba(255, 87, 34, 0.14) !important;
 }
 
 .dpad-btn svg {
   width: clamp(18px, calc(var(--smart-dpad-size) * 0.11), 26px);
   height: clamp(18px, calc(var(--smart-dpad-size) * 0.11), 26px);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
 
 /* Quadrant Sectors (proportional to --smart-dpad-size) */
@@ -645,9 +792,9 @@ body.desktop-studio-active .tab-pane:not(#tab-remote):not(.active) {
   width: var(--smart-dpad-center);
   height: var(--smart-dpad-center);
   border-radius: 50%;
-  background: linear-gradient(135deg, #2a3142 0%, #1a1e29 100%);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, #2b3346 0%, #181d29 100%);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.15);
   color: var(--text-main);
   font-size: clamp(0.85rem, calc(var(--smart-dpad-size) * 0.08), 1.15rem);
   font-weight: 700;
@@ -661,7 +808,7 @@ body.desktop-studio-active .tab-pane:not(#tab-remote):not(.active) {
 }
 
 .dpad-center:hover {
-  border-color: rgba(255, 152, 0, 0.4);
+  border-color: rgba(255, 152, 0, 0.5);
   color: var(--accent-amber);
 }
 
@@ -688,7 +835,7 @@ body.desktop-studio-active .tab-pane:not(#tab-remote):not(.active) {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: clamp(10px, 3.5cqi, 26px);
+  gap: clamp(8px, 3.2cqi, 20px);
   width: 100%;
 }
 
@@ -744,22 +891,101 @@ body.desktop-studio-active .tab-pane:not(#tab-remote):not(.active) {
   color: var(--text-main);
 }
 
+/* ----------------------------------------------------
+   Brushed Platinum / Metallic Home Button (Hardware Style)
+---------------------------------------------------- */
+.metal-home-btn {
+  background: linear-gradient(145deg, #ffffff 0%, #cbd5e1 45%, #94a3b8 100%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.65) !important;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.9), inset 0 -2px 4px rgba(0, 0, 0, 0.25) !important;
+  color: #0f172a !important;
+}
+
+.metal-home-btn svg {
+  fill: #0f172a !important;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.5));
+}
+
+.metal-home-btn .btn-label {
+  color: #1e293b !important;
+  font-weight: 700;
+}
+
+.metal-home-btn:hover {
+  background: linear-gradient(145deg, #ffffff 10%, #e2e8f0 55%, #cbd5e1 100%) !important;
+  box-shadow: 0 7px 20px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255, 255, 255, 1) !important;
+  border-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.metal-home-btn:active,
+.metal-home-btn.btn-pressed {
+  transform: scale(0.90) !important;
+  background: linear-gradient(145deg, #cbd5e1 0%, #94a3b8 100%) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(0, 0, 0, 0.35) !important;
+  color: #000 !important;
+}
+
+/* ----------------------------------------------------
+   Star Shortcut & Settings Buttons (Remote Pro)
+---------------------------------------------------- */
+.star-btn {
+  color: #fbbf24;
+}
+
+.star-btn svg {
+  fill: #fbbf24;
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.4));
+}
+
+.star-btn:hover {
+  border-color: rgba(251, 191, 36, 0.5);
+  color: #f59e0b;
+}
+
+.star-btn:active,
+.star-btn.btn-pressed {
+  transform: scale(0.91) !important;
+  border-color: #f59e0b !important;
+  color: #f59e0b !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.55) !important;
+}
+
+.gear-btn {
+  color: var(--text-muted);
+}
+
+.gear-btn:hover {
+  color: var(--text-main);
+  border-color: var(--border-hover);
+}
+
+.gear-btn:active,
+.gear-btn.btn-pressed {
+  transform: scale(0.91) !important;
+  border-color: var(--accent-orange) !important;
+  color: var(--accent-orange) !important;
+}
+
+/* ----------------------------------------------------
+   Media Playback Row & Sunset Play Button
+---------------------------------------------------- */
 .play-pause-btn {
   width: var(--smart-play-btn-size);
   height: var(--smart-play-btn-size);
-  background: linear-gradient(135deg, #ff5722 0%, #ff9800 100%);
+  background: linear-gradient(135deg, #ff5722 0%, #ff8f00 100%);
   color: #fff;
   border: none;
-  box-shadow: 0 4px 16px var(--accent-glow);
+  box-shadow: 0 6px 20px rgba(255, 87, 34, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .play-pause-btn svg {
   width: clamp(18px, 5.5cqi, 26px);
   height: clamp(18px, 5.5cqi, 26px);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 
 .play-pause-btn:hover {
-  box-shadow: 0 6px 20px var(--accent-glow);
+  box-shadow: 0 8px 24px rgba(255, 87, 34, 0.6);
   color: #fff;
 }
 
@@ -767,16 +993,18 @@ body.desktop-studio-active .tab-pane:not(#tab-remote):not(.active) {
 .volume-pill {
   display: flex;
   align-items: center;
-  background: var(--surface-color);
-  border: 1px solid var(--border-color);
-  border-radius: 30px;
+  background: rgba(20, 24, 34, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 28px;
   padding: 3px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .vol-btn {
-  width: clamp(38px, 11cqi, 54px);
-  height: clamp(32px, 8.5cqi, 42px);
+  width: clamp(34px, 9cqi, 48px);
+  height: clamp(32px, 8.5cqi, 40px);
   border-radius: 20px;
   border: none;
   background: transparent;

@@ -211,40 +211,46 @@
       const availableNetH  = Math.max(260, viewportHeight - overhead);
 
       // ── 5. Compute proportional control sizes ─────────────────────────────
-      let dpadSize, btnSize, playSize, gapSize;
+      let dpadSize, btnSize, playSize, gapSize, alexaH;
 
       if (isDesktop && remotePane && remotePane.clientHeight > 100) {
         // Desktop Studio Mode: Base calculations directly on the actual Column 1 remote container height
         const remoteH = remotePane.clientHeight - 24;
-        dpadSize = Math.max(120, Math.min(235, Math.round(remoteH * 0.38)));
-        btnSize  = Math.max(34,  Math.min(48,  Math.round(remoteH * 0.088)));
-        playSize = Math.max(40,  Math.min(56,  Math.round(remoteH * 0.105)));
-        gapSize  = Math.max(4,   Math.min(12,  Math.round(remoteH * 0.018)));
+        alexaH   = Math.max(30,  Math.min(42,  Math.round(remoteH * 0.07)));
+        dpadSize = Math.max(120, Math.min(225, Math.round(remoteH * 0.35)));
+        btnSize  = Math.max(34,  Math.min(46,  Math.round(remoteH * 0.082)));
+        playSize = Math.max(40,  Math.min(54,  Math.round(remoteH * 0.098)));
+        gapSize  = Math.max(4,   Math.min(10,  Math.round(remoteH * 0.016)));
       } else if (isLandscapePhone) {
-        dpadSize = Math.max(120, Math.min(180, Math.round(viewportHeight * 0.55)));
-        btnSize  = Math.max(36,  Math.min(44,  Math.round(viewportHeight * 0.11)));
-        playSize = Math.max(42,  Math.min(50,  Math.round(viewportHeight * 0.12)));
-        gapSize  = 5;
+        alexaH   = Math.max(26,  Math.min(32,  Math.round(viewportHeight * 0.08)));
+        dpadSize = Math.max(115, Math.min(170, Math.round(viewportHeight * 0.50)));
+        btnSize  = Math.max(34,  Math.min(42,  Math.round(viewportHeight * 0.10)));
+        playSize = Math.max(40,  Math.min(48,  Math.round(viewportHeight * 0.11)));
+        gapSize  = 4;
       } else if (availableNetH < 440) {
-        dpadSize = Math.max(130, Math.min(170, Math.round(availableNetH * 0.38), Math.round(viewportWidth * 0.50)));
-        btnSize  = Math.max(36,  Math.min(42,  Math.round(availableNetH * 0.085)));
-        playSize = Math.max(44,  Math.min(50,  Math.round(availableNetH * 0.10)));
+        alexaH   = Math.max(28,  Math.min(34,  Math.round(availableNetH * 0.075)));
+        dpadSize = Math.max(120, Math.min(160, Math.round(availableNetH * 0.34), Math.round(viewportWidth * 0.48)));
+        btnSize  = Math.max(34,  Math.min(40,  Math.round(availableNetH * 0.08)));
+        playSize = Math.max(42,  Math.min(48,  Math.round(availableNetH * 0.095)));
         gapSize  = 4;
       } else if (availableNetH < 620) {
-        dpadSize = Math.max(160, Math.min(210, Math.round(availableNetH * 0.36), Math.round(viewportWidth * 0.54)));
-        btnSize  = Math.max(42,  Math.min(50,  Math.round(availableNetH * 0.09)));
-        playSize = Math.max(50,  Math.min(58,  Math.round(availableNetH * 0.105)));
-        gapSize  = Math.min(12, Math.max(6, Math.round(availableNetH * 0.018)));
+        alexaH   = Math.max(34,  Math.min(40,  Math.round(availableNetH * 0.07)));
+        dpadSize = Math.max(150, Math.min(195, Math.round(availableNetH * 0.33), Math.round(viewportWidth * 0.52)));
+        btnSize  = Math.max(40,  Math.min(48,  Math.round(availableNetH * 0.085)));
+        playSize = Math.max(48,  Math.min(56,  Math.round(availableNetH * 0.10)));
+        gapSize  = Math.min(10, Math.max(6, Math.round(availableNetH * 0.016)));
       } else {
-        dpadSize = Math.max(180, Math.min(240, Math.round(availableNetH * 0.35), Math.round(maxWidth * 0.54)));
-        btnSize  = Math.min(54, Math.max(46, Math.round(availableNetH * 0.075)));
-        playSize = Math.min(62, Math.max(54, Math.round(availableNetH * 0.088)));
-        gapSize  = Math.min(16, Math.max(8, Math.round(availableNetH * 0.02)));
+        alexaH   = Math.max(38,  Math.min(44,  Math.round(availableNetH * 0.065)));
+        dpadSize = Math.max(170, Math.min(230, Math.round(availableNetH * 0.33), Math.round(maxWidth * 0.52)));
+        btnSize  = Math.min(52, Math.max(44, Math.round(availableNetH * 0.072)));
+        playSize = Math.min(60, Math.max(52, Math.round(availableNetH * 0.084)));
+        gapSize  = Math.min(14, Math.max(8, Math.round(availableNetH * 0.018)));
       }
 
       const centerSize = Math.round(dpadSize * 0.38);
       const tvHeight   = Math.min(Math.round(availableNetH * 0.72), 520);
 
+      document.documentElement.style.setProperty("--smart-alexa-height",   `${alexaH}px`);
       document.documentElement.style.setProperty("--smart-dpad-size",      `${dpadSize}px`);
       document.documentElement.style.setProperty("--smart-dpad-center",    `${centerSize}px`);
       document.documentElement.style.setProperty("--smart-btn-size",       `${btnSize}px`);
@@ -705,7 +711,7 @@
       const card = document.createElement("div");
       card.className = "app-card";
       const rawIcon = app.icon || `/icons/apps/${app.id}.png`;
-      const version = window.__APP_VERSION__ || "2.2.0";
+      const version = window.__APP_VERSION__ || "2.3.0";
       const iconSrc = rawIcon.includes("?") ? rawIcon : `${rawIcon}?v=${version}`;
       card.innerHTML = `
         <div class="app-icon-container">

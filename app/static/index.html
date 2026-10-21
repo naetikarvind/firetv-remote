@@ -10,7 +10,7 @@
   <title>Fire TV Remote Pro</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
-  <link rel="stylesheet" href="/style.css?v=2.2.0">
+  <link rel="stylesheet" href="/style.css?v=2.3.0">
 </head>
 <body>
   <div id="app" class="app-container">
@@ -121,34 +121,54 @@
       <!-- 1. TAB: REMOTE (D-PAD) -->
       <section id="tab-remote" class="tab-pane active">
         <div class="remote-deck">
+          <!-- Alexa Voice Pill (New Fire TV Signature Pill) -->
+          <div class="alexa-pill-container">
+            <button id="alexaVoiceBtn" class="alexa-voice-btn" data-key="ALEXA" title="Ask Alexa / Voice Search" aria-label="Ask Alexa">
+              <div class="alexa-icon-group">
+                <svg class="alexa-mic-svg" viewBox="0 0 24 24" width="17" height="17" fill="currentColor">
+                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+                <div class="alexa-soundwave">
+                  <span class="wave-bar bar-1"></span>
+                  <span class="wave-bar bar-2"></span>
+                  <span class="wave-bar bar-3"></span>
+                  <span class="wave-bar bar-4"></span>
+                </div>
+              </div>
+              <span class="alexa-label">Ask Alexa</span>
+              <div class="alexa-cyan-aura"></div>
+            </button>
+          </div>
+
           <!-- Circular D-Pad Controller -->
           <div class="dpad-container">
             <div class="dpad-disc">
               <!-- Up -->
               <button class="dpad-btn dpad-up" data-key="UP" aria-label="Up">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.6">
                   <polyline points="18 15 12 9 6 15"/>
                 </svg>
               </button>
               <!-- Down -->
               <button class="dpad-btn dpad-down" data-key="DOWN" aria-label="Down">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.6">
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
               </button>
               <!-- Left -->
               <button class="dpad-btn dpad-left" data-key="LEFT" aria-label="Left">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.6">
                   <polyline points="15 18 9 12 15 6"/>
                 </svg>
               </button>
               <!-- Right -->
               <button class="dpad-btn dpad-right" data-key="RIGHT" aria-label="Right">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.6">
                   <polyline points="9 18 15 12 9 6"/>
                 </svg>
               </button>
-              <!-- Center OK / Select -->
+              <!-- Center OK / Select Hub -->
               <button class="dpad-center" data-key="SELECT" aria-label="Select / OK">
                 <span>OK</span>
               </button>
@@ -156,7 +176,7 @@
           </div>
 
           <div class="remote-actions-group">
-            <!-- System Controls Row (Back, Home, Menu) -->
+            <!-- System Controls Row (Back, Metallic Home, Menu) -->
             <div class="controls-row system-row">
               <button class="remote-btn round-btn" data-key="BACK" title="Back" aria-label="Back">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4">
@@ -165,8 +185,8 @@
                 <span class="btn-label">Back</span>
               </button>
 
-              <button class="remote-btn round-btn primary-btn" data-key="HOME" title="Home" aria-label="Home">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+              <button class="remote-btn round-btn primary-btn metal-home-btn" data-key="HOME" title="Home" aria-label="Home">
+                <svg viewBox="0 0 24 24" width="23" height="23" fill="currentColor">
                   <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
                 </svg>
                 <span class="btn-label">Home</span>
@@ -182,28 +202,43 @@
               </button>
             </div>
 
-            <!-- Volume & Mute Row -->
+            <!-- Volume & Shortcuts Row (Remote Pro Star & Settings) -->
             <div class="controls-row volume-pill-container">
+              <button class="remote-btn round-btn star-btn" data-key="STAR" title="Fire TV Shortcuts" aria-label="Shortcuts">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+                <span class="btn-label">Star</span>
+              </button>
+
               <div class="volume-pill">
                 <button class="vol-btn" data-key="VOLUME_DOWN" title="Volume Down" aria-label="Volume Down">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="5" y1="12" x2="19" y2="12"/>
                   </svg>
                 </button>
                 <button class="vol-btn vol-mute" data-key="MUTE" title="Mute" aria-label="Mute">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2">
                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
                     <line x1="23" y1="9" x2="17" y2="15"/>
                     <line x1="17" y1="9" x2="23" y2="15"/>
                   </svg>
                 </button>
                 <button class="vol-btn" data-key="VOLUME_UP" title="Volume Up" aria-label="Volume Up">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="12" y1="5" x2="12" y2="19"/>
                     <line x1="5" y1="12" x2="19" y2="12"/>
                   </svg>
                 </button>
               </div>
+
+              <button class="remote-btn round-btn gear-btn" data-key="SETTINGS" title="Quick Settings" aria-label="Settings">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                <span class="btn-label">Options</span>
+              </button>
             </div>
 
             <!-- Media Playback Row -->
@@ -292,7 +327,7 @@
           <!-- Quick action bar below trackpad -->
           <div class="trackpad-footer">
             <button class="remote-btn mini-btn" data-key="BACK">Back</button>
-            <button class="remote-btn mini-btn primary-btn" data-key="HOME">Home</button>
+            <button class="remote-btn mini-btn primary-btn metal-home-btn" data-key="HOME">Home</button>
             <button class="remote-btn mini-btn" data-key="MENU">Menu</button>
             <button class="remote-btn mini-btn" data-key="PLAY_PAUSE">⏯</button>
           </div>

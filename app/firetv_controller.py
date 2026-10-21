@@ -49,6 +49,11 @@ KEYCODES = {
     "BACKSPACE": 67,
     "SPACE": 62,
     "SEARCH": 84,
+    "ALEXA": 84,
+    "VOICE": 84,
+    "STAR": 176,
+    "SETTINGS": 176,
+    "SHORTCUT": 176,
 }
 
 # Linux evdev hardware keycodes for sub-100ms ultra-fast key injection
@@ -83,6 +88,10 @@ LINUX_EVDEV_KEYCODES = {
     "BACKSPACE": 14,
     "DEL": 14,
     "SPACE": 57,
+    "ALEXA": 217,
+    "SEARCH": 217,
+    "STAR": 139,
+    "SETTINGS": 139,
 }
 
 POPULAR_APPS = [
