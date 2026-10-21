@@ -207,6 +207,29 @@ async def websocket_endpoint(websocket: WebSocket):
         if websocket in active_connections:
             active_connections.remove(websocket)
 
+async def auto_reconnect_worker():
+    """Continuously checks if saved Fire TV has come back online and auto-reconnects."""
+    from app.discovery import check_adb_port
+    while True:
+        await asyncio.sleep(4.0)
+        try:
+            if controller.state in ("disconnected", "error"):
+                config = load_config()
+                last = config.get("last_device")
+                if last and last.get("host"):
+                    host = last["host"]
+                    port = last.get("port", 5555)
+                    is_online = await check_adb_port(host, port, timeout=0.8)
+                    if is_online:
+                        logger_name = "firetv.reconnect"
+                        print(f"[{logger_name}] Detected Fire TV at {host}:{port} is online! Auto-reconnecting...")
+                        res = await controller.connect(host, port)
+                        if res.get("state") == "connected":
+                            print(f"[{logger_name}] Successfully auto-reconnected to {host}:{port}!")
+                            await broadcast_status()
+        except Exception as e:
+            pass
+
 # Auto-reconnect background task on startup if a device was previously saved
 @app.on_event("startup")
 async def startup_event():
@@ -216,6 +239,8 @@ async def startup_event():
         logger_name = "firetv.startup"
         print(f"[{logger_name}] Found previously connected device: {last['host']}. Auto-connecting in background...")
         asyncio.create_task(controller.connect(last["host"], last.get("port", 5555)))
+    # Launch standing reconnect loop
+    asyncio.create_task(auto_reconnect_worker())
 
 # Mount static folder
 static_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
