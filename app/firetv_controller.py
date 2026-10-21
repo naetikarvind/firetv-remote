@@ -30,6 +30,13 @@ KEYCODES = {
     "VOLUME_DOWN": 25,
     "MUTE": 164,
 
+    # Channels / TV
+    "CHANNEL_UP": 166,
+    "CHANNEL_DOWN": 167,
+    "LIVE_TV": 170,
+    "GUIDE": 172,
+    "TV": 170,
+
     # Playback
     "PLAY": 126,
     "PAUSE": 127,
@@ -95,8 +102,10 @@ LINUX_EVDEV_KEYCODES = {
 }
 
 POPULAR_APPS = [
-    {"id": "youtube", "name": "YouTube", "package": "com.amazon.firetv.youtube", "fallback": "com.google.android.youtube.tv", "color": "#FF0000", "icon": "/icons/apps/youtube.png"},
     {"id": "netflix", "name": "Netflix", "package": "com.netflix.ninja", "color": "#E50914", "icon": "/icons/apps/netflix.png"},
+    {"id": "youtube", "name": "YouTube", "package": "com.amazon.firetv.youtube", "fallback": "com.google.android.youtube.tv", "color": "#FF0000", "icon": "/icons/apps/youtube.png"},
+    {"id": "zee5", "name": "ZEE5", "package": "com.graymatrix.did", "color": "#18181C", "icon": "/icons/apps/zee5.png"},
+    {"id": "sonyliv", "name": "Sony LIV", "package": "com.sonyliv", "color": "#0C1020", "icon": "/icons/apps/sonyliv.png"},
     {"id": "prime_video", "name": "Prime Video", "package": "com.amazon.avod", "color": "#00A8E1", "icon": "/icons/apps/prime_video.png"},
     {"id": "disney", "name": "Disney+", "package": "com.disney.disneyplus", "color": "#113CCF", "icon": "/icons/apps/disney.png"},
     {"id": "spotify", "name": "Spotify", "package": "com.spotify.tv.android", "color": "#1DB954", "icon": "/icons/apps/spotify.png"},
@@ -423,5 +432,6 @@ class FireTVController:
             "port": self.port,
             "last_error": self.last_error,
             "info": self.device_info,
+            "device_name": "Arvind's FireTVStick",
             "apps": POPULAR_APPS
         }

@@ -6,369 +6,307 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FireRemote">
-  <meta name="theme-color" content="#0d0f14">
+  <meta name="theme-color" content="#1a1c20">
   <title>Fire TV Remote Pro</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
-  <link rel="stylesheet" href="/style.css?v=3.0.0">
+  <link rel="stylesheet" href="/style.css?v=3.1.0">
 </head>
 <body>
   <div id="app" class="app-container">
-    <!-- Top Header -->
-    <header class="header">
-      <div class="brand">
-        <div class="logo-wrapper">
-          <svg class="flame-icon" viewBox="0 0 24 24" width="22" height="22">
-            <path fill="url(#fireGradient)" d="M12 23c-4.97 0-9-4.03-9-9 0-4.09 3.09-8.49 5.86-11.23.4-.4 1.07-.15 1.11.41.22 3.12 2.29 4.7 3.53 4.82.35.03.65-.24.62-.59-.2-2.15.54-4.5 2.1-5.91.42-.38 1.09-.1 1.11.46.12 3.73 2.13 6.04 3.67 7.04.4.26.54.77.34 1.2A9.01 9.01 0 0 1 12 23z"/>
-            <defs>
-              <linearGradient id="fireGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff3d00"/>
-                <stop offset="100%" stop-color="#ff9100"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        <span class="brand-title">Fire TV <span class="badge-pro">PRO</span></span>
+    <!-- Top Header (Official Fire TV App Style) -->
+    <header class="app-top-bar">
+      <!-- Sleep / Screen Off Moon Button -->
+      <button id="sleepBtn" class="top-icon-btn" data-key="SLEEP" title="Sleep / Standby" aria-label="Sleep">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+          <path d="M12.3 2a10 10 0 0 0-1.9 19.8 10 10 0 0 0 10.6-10.6A10 10 0 0 0 12.3 2z"/>
+        </svg>
+      </button>
+
+      <!-- Center Device Bar in Electric Blue (Arvind's FireTVStick) -->
+      <div id="deviceBarBtn" class="top-device-pill" role="button" tabindex="0" title="Fire TV Device Status" aria-label="Device Status">
+        <svg class="device-stick-svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <rect x="2" y="7" width="18" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+          <circle cx="6" cy="12" r="1.5"/>
+          <line x1="10" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="10" y1="14" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span id="headerDeviceName" class="top-device-text">Arvind's FireTVStick</span>
       </div>
 
-      <div class="header-actions">
-        <!-- Condensed Device & Alerts Trigger Button -->
-        <button id="deviceAlertsBtn" class="device-alerts-pill" title="Fire TV Device & Status" aria-label="Device & Alerts">
-          <span class="device-pill-icon">📺</span>
-          <span id="devicePillText" class="device-pill-text">Fire TV</span>
-          <span id="deviceAlertBadge" class="alert-badge hidden">!</span>
-        </button>
+      <!-- Right 3-Dots Menu Button -->
+      <button id="dotsMenuBtn" class="top-icon-btn" title="More Options" aria-label="Options">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <circle cx="12" cy="5" r="2.2"/>
+          <circle cx="12" cy="12" r="2.2"/>
+          <circle cx="12" cy="19" r="2.2"/>
+        </svg>
+      </button>
 
-        <button id="statusBtn" class="status-pill disconnected" title="Connection Settings">
-          <span class="status-dot"></span>
-          <span id="statusText">Disconnected</span>
-        </button>
-
-        <button id="desktopModeBtn" class="icon-btn" title="Toggle Desktop Studio / Compact Remote" aria-label="Desktop Studio">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="2" y="3" width="20" height="14" rx="2"/>
-            <line x1="8" y1="21" x2="16" y2="21"/>
-            <line x1="12" y1="17" x2="12" y2="21"/>
-          </svg>
-        </button>
-
-        <button id="mobileQrBtn" class="icon-btn" title="Open on Mobile Phone" aria-label="Open on Mobile">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="5" y="2" width="14" height="20" rx="3" ry="3"/>
-            <line x1="12" y1="18" x2="12" y2="18.01"/>
-          </svg>
-        </button>
-
-        <button id="helpBtn" class="icon-btn" title="How to Setup ADB" aria-label="Setup Guide">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
-        </button>
-
-        <button id="powerBtn" class="icon-btn power-btn" title="Power On/Off" aria-label="Power">
-          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.3">
-            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
-            <line x1="12" y1="2" x2="12" y2="12"/>
-          </svg>
-        </button>
+      <!-- Hidden compatibility buttons used by JS / Desktop Studio -->
+      <div class="hidden-compat-triggers" style="display:none;">
+        <button id="deviceAlertsBtn"><span id="devicePillText">Fire TV</span><span id="deviceAlertBadge">!</span></button>
+        <button id="statusBtn"><span id="statusText">Connected</span></button>
+        <button id="powerBtn" data-key="POWER"></button>
+        <button id="desktopModeBtn"></button>
+        <button id="mobileQrBtn"></button>
+        <button id="helpBtn"></button>
       </div>
     </header>
 
-    <!-- Navigation Tabs -->
-    <nav class="nav-tabs">
-      <button class="nav-tab active" data-tab="remote">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="7" y="2" width="10" height="20" rx="3"/>
-          <circle cx="12" cy="7" r="1.5"/>
-          <line x1="12" y1="12" x2="12" y2="16"/>
-        </svg>
-        <span>Remote</span>
-      </button>
-      <button class="nav-tab" data-tab="trackpad">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="4" width="18" height="16" rx="3"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
-        <span>Trackpad</span>
-      </button>
-      <button class="nav-tab" data-tab="keyboard">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="2" y="4" width="20" height="16" rx="2"/>
-          <line x1="6" y1="8" x2="6" y2="8.01"/>
-          <line x1="10" y1="8" x2="10" y2="8.01"/>
-          <line x1="14" y1="8" x2="14" y2="8.01"/>
-          <line x1="18" y1="8" x2="18" y2="8.01"/>
-          <line x1="7" y1="12" x2="17" y2="12"/>
-          <line x1="6" y1="16" x2="18" y2="16"/>
-        </svg>
-        <span>Keyboard</span>
-      </button>
-      <button class="nav-tab" data-tab="apps">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-          <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-          <rect x="14" y="14" width="7" height="7" rx="1.5"/>
-          <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-        </svg>
-        <span>Apps</span>
-      </button>
-    </nav>
-
     <!-- Main Content Area -->
     <main class="main-content">
-      <!-- 1. TAB: REMOTE (D-PAD) -->
+      <!-- 1. REMOTE TAB (Default Full Screen View) -->
       <section id="tab-remote" class="tab-pane active">
         <div class="remote-deck">
-          <!-- Circular D-Pad Controller -->
-          <div class="dpad-container">
-            <div class="dpad-disc">
-              <!-- Up -->
-              <button class="dpad-btn dpad-up" data-key="UP" aria-label="Up">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.6">
-                  <polyline points="18 15 12 9 6 15"/>
+          <!-- 6-Satellite Radial Remote Stage around Center Controller -->
+          <div class="remote-stage">
+            <!-- Top Satellite Row: Menu (Left) and Settings Sliders (Right) -->
+            <div class="satellite-row top-satellite-row">
+              <button class="satellite-btn menu-btn" data-key="MENU" title="Options / Menu" aria-label="Menu">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+                  <line x1="4" y1="7" x2="20" y2="7"/>
+                  <line x1="4" y1="12" x2="20" y2="12"/>
+                  <line x1="4" y1="17" x2="20" y2="17"/>
                 </svg>
               </button>
-              <!-- Down -->
-              <button class="dpad-btn dpad-down" data-key="DOWN" aria-label="Down">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.6">
-                  <polyline points="6 9 12 15 18 9"/>
+
+              <button id="slidersSettingsBtn" class="satellite-btn sliders-btn" title="Remote Settings / Controller Mode" aria-label="Settings">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                  <line x1="7" y1="3" x2="7" y2="21"/>
+                  <circle cx="7" cy="14" r="3" fill="#2d3238" stroke="currentColor" stroke-width="2.2"/>
+                  <line x1="17" y1="3" x2="17" y2="21"/>
+                  <circle cx="17" cy="9" r="3" fill="#2d3238" stroke="currentColor" stroke-width="2.2"/>
                 </svg>
               </button>
-              <!-- Left -->
-              <button class="dpad-btn dpad-left" data-key="LEFT" aria-label="Left">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.6">
-                  <polyline points="15 18 9 12 15 6"/>
+            </div>
+
+            <!-- Middle Row: Keyboard (Left), Center Controller, Mic (Right) -->
+            <div class="center-controller-row">
+              <button id="openKeyboardBtn" class="satellite-btn keyboard-btn" title="Keyboard Input" aria-label="Keyboard">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="5" width="20" height="14" rx="2.5"/>
+                  <line x1="6" y1="9" x2="6.01" y2="9"/>
+                  <line x1="10" y1="9" x2="10.01" y2="9"/>
+                  <line x1="14" y1="9" x2="14.01" y2="9"/>
+                  <line x1="18" y1="9" x2="18.01" y2="9"/>
+                  <line x1="6" y1="12" x2="6.01" y2="12"/>
+                  <line x1="10" y1="12" x2="10.01" y2="12"/>
+                  <line x1="14" y1="12" x2="14.01" y2="12"/>
+                  <line x1="18" y1="12" x2="18.01" y2="12"/>
+                  <line x1="8" y1="15" x2="16" y2="15"/>
                 </svg>
               </button>
-              <!-- Right -->
-              <button class="dpad-btn dpad-right" data-key="RIGHT" aria-label="Right">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.6">
-                  <polyline points="9 18 15 12 9 6"/>
+
+              <!-- Center Controller (Swappable between D-Pad and Trackpad) -->
+              <div id="controllerWrapper" class="controller-wrapper dpad-mode">
+                <!-- 1. D-Pad Controller (Image 1 & 4) -->
+                <div id="dpadController" class="dpad-controller">
+                  <svg class="dpad-svg" viewBox="0 0 260 260" width="100%" height="100%">
+                    <!-- Up Quadrant Wedge -->
+                    <g class="dpad-wedge" data-key="UP" role="button" aria-label="Up">
+                      <path class="wedge-path" d="M 47.58 40.05 A 122 122 0 0 1 212.42 40.05 L 165.13 91.66 A 52 52 0 0 0 94.87 91.66 Z" />
+                      <polyline class="chevron-icon" points="121,63 130,54 139,63" />
+                    </g>
+                    <!-- Right Quadrant Wedge -->
+                    <g class="dpad-wedge" data-key="RIGHT" role="button" aria-label="Right">
+                      <path class="wedge-path" d="M 219.95 47.58 A 122 122 0 0 1 219.95 212.42 L 168.34 165.13 A 52 52 0 0 0 168.34 94.87 Z" />
+                      <polyline class="chevron-icon" points="197,121 206,130 197,139" />
+                    </g>
+                    <!-- Down Quadrant Wedge -->
+                    <g class="dpad-wedge" data-key="DOWN" role="button" aria-label="Down">
+                      <path class="wedge-path" d="M 212.42 219.95 A 122 122 0 0 1 47.58 219.95 L 94.87 168.34 A 52 52 0 0 0 165.13 168.34 Z" />
+                      <polyline class="chevron-icon" points="121,197 130,206 139,197" />
+                    </g>
+                    <!-- Left Quadrant Wedge -->
+                    <g class="dpad-wedge" data-key="LEFT" role="button" aria-label="Left">
+                      <path class="wedge-path" d="M 40.05 212.42 A 122 122 0 0 1 40.05 47.58 L 91.66 94.87 A 52 52 0 0 0 91.66 165.13 Z" />
+                      <polyline class="chevron-icon" points="63,121 54,130 63,139" />
+                    </g>
+                    <!-- Center Select Circle -->
+                    <circle class="dpad-center-circle" cx="130" cy="130" r="46" data-key="SELECT" role="button" aria-label="Select / OK" />
+                  </svg>
+                </div>
+
+                <!-- 2. Trackpad Controller (Image 3) -->
+                <div id="trackpadController" class="trackpad-controller hidden">
+                  <div class="trackpad-touch-surface" id="fireTrackpadSurface">
+                    <span class="trackpad-hint-text">Swipe to move,<br>tap to select</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Microphone / Voice Search Button -->
+              <button class="satellite-btn mic-btn" data-key="VOICE" title="Alexa Voice Search" aria-label="Voice Search">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                 </svg>
               </button>
-              <!-- Center OK / Select Hub -->
-              <button class="dpad-center" data-key="SELECT" aria-label="Select / OK">
-                <span>OK</span>
+            </div>
+
+            <!-- Bottom Satellite Row: Back (Left) and Vivid Orange Home (Right) -->
+            <div class="satellite-row bottom-satellite-row">
+              <button class="satellite-btn back-btn" data-key="BACK" title="Back" aria-label="Back">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 14l-5-5 5-5"/>
+                  <path d="M4 9h11a5 5 0 0 1 5 5v3"/>
+                </svg>
               </button>
+
+              <button class="satellite-btn home-orange-btn" data-key="HOME" title="Home" aria-label="Home">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 11l9-8 9 8M5 10.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9.5"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Bottom Drawer Drag Handle (=) -->
+            <div class="drawer-drag-pill">
+              <span class="pill-bar"></span>
             </div>
           </div>
 
-          <div class="remote-actions-group">
-            <!-- System Controls Row (Back, Metallic Home, Menu) -->
-            <div class="controls-row system-row">
-              <button class="remote-btn round-btn" data-key="BACK" title="Back" aria-label="Back">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4">
-                  <path d="M19 12H5M12 19l-7-7 7-7"/>
-                </svg>
-                <span class="btn-label">Back</span>
-              </button>
-
-              <button class="remote-btn round-btn primary-btn" data-key="HOME" title="Home" aria-label="Home">
-                <svg viewBox="0 0 24 24" width="23" height="23" fill="currentColor">
-                  <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-                </svg>
-                <span class="btn-label">Home</span>
-              </button>
-
-              <button class="remote-btn round-btn" data-key="MENU" title="Options / Menu" aria-label="Menu">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4">
-                  <line x1="3" y1="12" x2="21" y2="12"/>
-                  <line x1="3" y1="6" x2="21" y2="6"/>
-                  <line x1="3" y1="18" x2="21" y2="18"/>
-                </svg>
-                <span class="btn-label">Menu</span>
-              </button>
+          <!-- Bottom Drawer Container with Media / Apps / Channels Tabs -->
+          <div class="bottom-drawer-container">
+            <div class="bottom-tabs-header">
+              <button class="drawer-tab-btn" data-drawer-tab="media">Media</button>
+              <button class="drawer-tab-btn active" data-drawer-tab="apps">Apps</button>
+              <button class="drawer-tab-btn" data-drawer-tab="channels">Channels</button>
             </div>
 
-            <!-- Volume & Mute Row -->
-            <div class="controls-row volume-pill-container">
-
-              <div class="volume-pill">
-                <button class="vol-btn" data-key="VOLUME_DOWN" title="Volume Down" aria-label="Volume Down">
-                  <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
-                </button>
-                <button class="vol-btn vol-mute" data-key="MUTE" title="Mute" aria-label="Mute">
-                  <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                    <line x1="23" y1="9" x2="17" y2="15"/>
-                    <line x1="17" y1="9" x2="23" y2="15"/>
-                  </svg>
-                </button>
-                <button class="vol-btn" data-key="VOLUME_UP" title="Volume Up" aria-label="Volume Up">
-                  <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
-                </button>
+            <div class="drawer-tab-content">
+              <!-- Tab Panel 1: Media Controls (Playback & Volume) -->
+              <div id="drawerTabMedia" class="drawer-pane hidden">
+                <div class="media-controls-row">
+                  <button class="media-circle-btn" data-key="REWIND" title="Rewind" aria-label="Rewind">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                      <polygon points="11 19 2 12 11 5 11 19"/>
+                      <polygon points="22 19 13 12 22 5 22 19"/>
+                    </svg>
+                  </button>
+                  <button class="media-circle-btn play-accent-btn" data-key="PLAY_PAUSE" title="Play / Pause" aria-label="Play / Pause">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                      <polygon points="6 4 18 12 6 20 6 4"/>
+                    </svg>
+                  </button>
+                  <button class="media-circle-btn" data-key="FAST_FORWARD" title="Fast Forward" aria-label="Fast Forward">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                      <polygon points="13 19 22 12 13 5 13 19"/>
+                      <polygon points="2 19 11 12 2 5 2 19"/>
+                    </svg>
+                  </button>
+                  <button class="media-circle-btn" data-key="VOLUME_DOWN" title="Volume Down" aria-label="Volume Down">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                  </button>
+                  <button class="media-circle-btn" data-key="MUTE" title="Mute" aria-label="Mute">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                      <line x1="23" y1="9" x2="17" y2="15"/>
+                      <line x1="17" y1="9" x2="23" y2="15"/>
+                    </svg>
+                  </button>
+                  <button class="media-circle-btn" data-key="VOLUME_UP" title="Volume Up" aria-label="Volume Up">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <!-- Media Playback Row -->
-            <div class="controls-row media-row">
-              <button class="remote-btn round-btn" data-key="REWIND" title="Rewind" aria-label="Rewind">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                  <polygon points="11 19 2 12 11 5 11 19"/>
-                  <polygon points="22 19 13 12 22 5 22 19"/>
-                </svg>
-              </button>
+              <!-- Tab Panel 2: Apps (Horizontal Scroll Row matching Image 1) -->
+              <div id="drawerTabApps" class="drawer-pane active">
+                <div id="drawerAppsRow" class="apps-horizontal-scroll">
+                  <!-- Rendered dynamically by JS -->
+                </div>
+              </div>
 
-              <button class="remote-btn round-btn play-pause-btn" data-key="PLAY_PAUSE" title="Play / Pause" aria-label="Play / Pause">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                  <polygon points="5 3 19 12 5 21 5 3"/>
-                </svg>
-              </button>
-
-              <button class="remote-btn round-btn" data-key="FAST_FORWARD" title="Fast Forward" aria-label="Fast Forward">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                  <polygon points="13 19 22 12 13 5 13 19"/>
-                  <polygon points="2 19 11 12 2 5 2 19"/>
-                </svg>
-              </button>
+              <!-- Tab Panel 3: Channels (3 Pill Buttons matching Image 3) -->
+              <div id="drawerTabChannels" class="drawer-pane hidden">
+                <div class="channels-capsules-row">
+                  <button class="channel-capsule-btn" data-key="LIVE_TV" title="Live TV / Channels" aria-label="Live TV">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="2" y="7" width="20" height="14" rx="2"/>
+                      <polyline points="17 2 12 7 7 2"/>
+                    </svg>
+                  </button>
+                  <button class="channel-capsule-btn" data-key="CHANNEL_DOWN" title="Channel Down" aria-label="Channel Down">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                      <polygon points="12 18 5 9 19 9"/>
+                    </svg>
+                  </button>
+                  <button class="channel-capsule-btn" data-key="CHANNEL_UP" title="Channel Up" aria-label="Channel Up">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                      <polygon points="12 6 19 15 5 15"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- DESKTOP STUDIO TV MONITOR -->
+      <!-- 2. DESKTOP STUDIO TV MONITOR (Center Column in Widescreen Mode) -->
       <section id="studioTvMonitor" class="studio-tv-monitor">
         <div class="tv-bezel">
           <div class="tv-screen-frame" id="tvScreenFrame">
             <img id="tvScreenImg" class="tv-screen-img" src="/api/screenshot" alt="Live Fire TV Display" loading="eager">
             <div id="tvScreenPlaceholder" class="tv-screen-placeholder">
-              <div class="tv-scanlines"></div>
-              <div class="tv-screen-empty-content">
-                <div class="tv-antenna-icon">
-                  <svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <rect x="2" y="7" width="20" height="15" rx="3" ry="3"/>
-                    <polyline points="17 2 12 7 7 2"/>
-                  </svg>
-                </div>
+              <div class="tv-spinner"></div>
+              <div class="tv-placeholder-info">
+                <svg class="tv-placeholder-icon" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/>
+                  <polyline points="17 2 12 7 7 2"/>
+                </svg>
                 <strong id="tvPlaceholderTitle">Live TV Mirror Display</strong>
                 <p id="tvPlaceholderSubtitle">Connect to your Fire TV to stream the display</p>
                 <button id="tvConnectPromptBtn" class="btn-secondary">Check Connection</button>
               </div>
             </div>
-            <div class="tv-screen-glare"></div>
-            <div class="tv-status-badge">
+            <div class="tv-badge">
               <span class="live-dot" id="tvLiveDot"></span>
               <span id="tvStatusLabel">1080p FHD</span>
             </div>
           </div>
           <div class="tv-controls-bar">
             <button id="tvRefreshBtn" class="tv-btn" title="Capture Fresh Screen Snapshot">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M23 4v6h-6M1 20v-6h6"/>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
               </svg>
-              <span>Capture</span>
+              <span>Snapshot</span>
             </button>
             <button id="tvLiveSyncBtn" class="tv-btn active" title="Toggle Real-Time Display Sync">
-              <span class="sync-pulse"></span>
+              <span class="live-pulse-dot"></span>
               <span id="tvLiveSyncText">Live Sync: ON</span>
             </button>
             <button id="tvFullscreenBtn" class="tv-btn icon-only" title="Full Screen TV Preview">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <polyline points="9 21 3 21 3 15"/>
+                <line x1="21" y1="3" x2="14" y2="10"/>
+                <line x1="3" y1="21" x2="10" y2="14"/>
               </svg>
             </button>
           </div>
         </div>
       </section>
 
-      <!-- 2. TAB: TRACKPAD -->
-      <section id="tab-trackpad" class="tab-pane">
-        <div class="trackpad-wrapper">
-          <div id="trackpadSurface" class="trackpad-surface">
-            <div class="trackpad-hint">
-              <div class="touch-icon">👆</div>
-              <span>Swipe to Navigate</span>
-              <small>Tap for OK • Two-finger tap for Back</small>
-            </div>
-            <div id="trackpadRipple" class="trackpad-ripple"></div>
-          </div>
-          <!-- Quick action bar below trackpad -->
-          <div class="trackpad-footer">
-            <button class="remote-btn mini-btn" data-key="BACK">Back</button>
-            <button class="remote-btn mini-btn primary-btn " data-key="HOME">Home</button>
-            <button class="remote-btn mini-btn" data-key="MENU">Menu</button>
-            <button class="remote-btn mini-btn" data-key="PLAY_PAUSE">⏯</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- 3. TAB: KEYBOARD -->
-      <section id="tab-keyboard" class="tab-pane">
-        <div class="keyboard-pane">
-          <div class="keyboard-card">
-            <h3>Type & Search on Fire TV</h3>
-            <p>Send text directly to any search bar or login screen on your Fire TV without typing letter by letter with a remote.</p>
-
-            <div class="input-group">
-              <input type="text" id="textInput" placeholder="Type text or paste URL / search query..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-              <button id="clearTextBtn" class="clear-btn" title="Clear">✕</button>
-            </div>
-
-            <div class="keyboard-actions">
-              <button id="sendTextBtn" class="btn-primary-action">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="22" y1="2" x2="11" y2="13"/>
-                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                </svg>
-                Send to Fire TV
-              </button>
-            </div>
-
-            <div class="quick-keys-grid">
-              <button class="quick-key-btn" data-key="SEARCH">🔍 Search</button>
-              <button class="quick-key-btn" data-key="ENTER">↵ Enter / Done</button>
-              <button class="quick-key-btn" data-key="BACKSPACE">⌫ Backspace</button>
-              <button class="quick-key-btn" data-key="SPACE">␣ Space</button>
-            </div>
-
-            <!-- Interactive Desktop Keyboard Hotkeys Deck -->
-            <div class="desktop-hotkeys-box">
-              <div class="hotkeys-header">
-                <strong>⌨️ Hardware Keyboard Controls</strong>
-                <span class="hotkeys-hint">Keys light up when pressed on your keyboard</span>
-              </div>
-              <div class="hotkeys-grid">
-                <div class="hotkey-chip" data-hotkey="ArrowUp"><kbd>▲</kbd><span>Up</span></div>
-                <div class="hotkey-chip" data-hotkey="ArrowDown"><kbd>▼</kbd><span>Down</span></div>
-                <div class="hotkey-chip" data-hotkey="ArrowLeft"><kbd>◀</kbd><span>Left</span></div>
-                <div class="hotkey-chip" data-hotkey="ArrowRight"><kbd>▶</kbd><span>Right</span></div>
-                <div class="hotkey-chip" data-hotkey="Enter"><kbd>↵ Enter</kbd><span>OK</span></div>
-                <div class="hotkey-chip" data-hotkey="Escape"><kbd>Esc</kbd><span>Back</span></div>
-                <div class="hotkey-chip" data-hotkey="KeyH"><kbd>H</kbd><span>Home</span></div>
-                <div class="hotkey-chip" data-hotkey="KeyM"><kbd>M</kbd><span>Menu</span></div>
-                <div class="hotkey-chip" data-hotkey="Space"><kbd>Space</kbd><span>Play</span></div>
-                <div class="hotkey-chip" data-hotkey="Equal"><kbd>+</kbd><span>Vol +</span></div>
-                <div class="hotkey-chip" data-hotkey="Minus"><kbd>-</kbd><span>Vol -</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 4. TAB: APPS -->
-      <section id="tab-apps" class="tab-pane">
-        <div class="apps-pane">
-          <div class="apps-header">
-            <h3>Quick Launch</h3>
-            <span>Open your favorite channels with one tap</span>
-          </div>
-
+      <!-- 3. SECONDARY TOOLS PANE (For Desktop Studio & Full App Drawer) -->
+      <section id="tab-apps" class="tab-pane studio-tools-pane">
+        <div class="apps-container">
+          <div class="section-title">All Installed Apps</div>
           <div id="appsGrid" class="apps-grid">
-            <!-- Populated dynamically via JS -->
+            <!-- Dynamically populated -->
           </div>
-
-          <div class="custom-app-box">
-            <h4>Launch Custom Package</h4>
-            <div class="custom-app-input">
-              <input type="text" id="customPackageInput" placeholder="e.g. com.plexapp.android">
+          <div class="custom-launch-box">
+            <span class="custom-launch-title">Launch Custom Android Package</span>
+            <div class="custom-launch-input-group">
+              <input type="text" id="customPackageInput" placeholder="e.g. com.graymatrix.did">
               <button id="launchCustomBtn" class="btn-secondary">Launch</button>
             </div>
           </div>
@@ -376,13 +314,143 @@
       </section>
     </main>
 
-    <!-- Keyboard Shortcuts Helper (Desktop) -->
+    <!-- Desktop Keyboard Shortcuts Hint Footer -->
     <footer class="desktop-hints">
-      <span>⌨️ Shortcuts: Arrow keys (D-pad), Enter (OK), Esc/Backspace (Back), H (Home), M (Menu), Space (Play/Pause)</span>
+      <span>⌨️ Shortcuts: Arrow keys (D-pad), Enter (Select), Esc/Backspace (Back), H (Home), M (Menu), Space (Play/Pause)</span>
     </footer>
   </div>
 
-  <!-- MODAL: Device Status & Alerts Popup (Condensed View) -->
+  <!-- MODAL 1: Remote Settings / Controller Mode (Image 2 - Replicated 1:1) -->
+  <div id="remoteSettingsModal" class="modal-overlay hidden">
+    <div class="modal-card fire-settings-card">
+      <div class="settings-options-list">
+        <!-- Option: D-Pad Control -->
+        <label class="settings-option-item" id="optionDpad">
+          <div class="option-left">
+            <div class="option-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <circle cx="12" cy="4" r="1.5" fill="currentColor"/>
+                <circle cx="12" cy="20" r="1.5" fill="currentColor"/>
+                <circle cx="4" cy="12" r="1.5" fill="currentColor"/>
+                <circle cx="20" cy="12" r="1.5" fill="currentColor"/>
+                <rect x="2" y="2" width="20" height="20" rx="4"/>
+              </svg>
+            </div>
+            <span class="option-title">D-Pad Control</span>
+          </div>
+          <input type="radio" name="controllerMode" value="dpad" id="radioDpad" class="settings-radio" checked>
+          <span class="custom-radio"></span>
+        </label>
+
+        <!-- Option: Trackpad Control -->
+        <label class="settings-option-item" id="optionTrackpad">
+          <div class="option-left">
+            <div class="option-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="4"/>
+              </svg>
+            </div>
+            <span class="option-title">Trackpad Control</span>
+          </div>
+          <input type="radio" name="controllerMode" value="trackpad" id="radioTrackpad" class="settings-radio">
+          <span class="custom-radio"></span>
+        </label>
+
+        <!-- Option: Vibration with Blue Toggle Switch -->
+        <div class="settings-option-item">
+          <div class="option-left">
+            <div class="option-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 8l3 4-3 4M22 8l-3 4 3 4M7 5v14M17 5v14"/>
+              </svg>
+            </div>
+            <span class="option-title">Vibration</span>
+          </div>
+          <label class="switch-toggle">
+            <input type="checkbox" id="vibrationToggle" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- TV Control Setup Link -->
+        <div class="settings-option-item clickable" id="tvControlSetupBtn">
+          <div class="option-left">
+            <div class="option-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </div>
+            <span class="option-title">TV Control Setup</span>
+          </div>
+          <span class="option-chevron">›</span>
+        </div>
+      </div>
+
+      <!-- Done Button -->
+      <button id="closeRemoteSettingsBtn" class="btn-done-pill">Done</button>
+
+      <!-- More Remote Settings Link -->
+      <button id="moreRemoteSettingsLink" class="btn-more-settings">More remote settings</button>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Virtual Keyboard Popup -->
+  <div id="keyboardModal" class="modal-overlay hidden">
+    <div class="modal-card fire-keyboard-card">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <span class="modal-header-icon">⌨️</span>
+          <h3>Type on Fire TV</h3>
+        </div>
+        <button id="closeKeyboardModal" class="btn-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="keyboard-input-row">
+          <input type="text" id="textInput" placeholder="Type text, search, or URL..." autocomplete="off">
+          <button id="sendTextBtn" class="btn-primary-action">Send</button>
+        </div>
+        <div class="keyboard-quick-actions">
+          <button class="quick-key-btn" data-key="ENTER">↵ Enter</button>
+          <button class="quick-key-btn" data-key="BACKSPACE">⌫ Backspace</button>
+          <button class="quick-key-btn" data-key="SPACE">␣ Space</button>
+          <button id="clearTextBtn" class="quick-key-btn">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: 3-Dots Options Menu -->
+  <div id="dotsMenuModal" class="modal-overlay hidden">
+    <div class="modal-card dots-menu-card">
+      <div class="dots-menu-list">
+        <button id="dotsConnectBtn" class="dots-menu-item">
+          <span class="dots-item-icon">📡</span>
+          <span>Connect / Switch TV</span>
+        </button>
+        <button id="dotsDesktopBtn" class="dots-menu-item">
+          <span class="dots-item-icon">🖥️</span>
+          <span>Toggle Desktop Studio Mode</span>
+        </button>
+        <button id="dotsQrBtn" class="dots-menu-item">
+          <span class="dots-item-icon">📱</span>
+          <span>Open on Phone (QR Code)</span>
+        </button>
+        <button id="dotsHelpBtn" class="dots-menu-item">
+          <span class="dots-item-icon">❓</span>
+          <span>ADB Setup Guide</span>
+        </button>
+        <button id="dotsDisconnectBtn" class="dots-menu-item text-danger">
+          <span class="dots-item-icon">🔌</span>
+          <span>Disconnect TV</span>
+        </button>
+      </div>
+      <button id="closeDotsMenuBtn" class="btn-done-pill" style="margin-top: 14px;">Close</button>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Device Status & Alerts Popup -->
   <div id="deviceStatusModal" class="modal-overlay hidden">
     <div class="modal-card modal-device-status">
       <div class="modal-header">
@@ -394,11 +462,10 @@
       </div>
 
       <div class="modal-body">
-        <!-- 1. Device Info Card -->
         <div id="deviceBar" class="device-status-card">
           <div class="device-info-left">
             <span class="device-status-badge" id="deviceStatusBadge">Active Device</span>
-            <span id="deviceModel" class="device-model">Amazon Fire TV</span>
+            <span id="deviceModel" class="device-model">Arvind's FireTVStick</span>
             <span id="deviceApp" class="device-app">App: Home</span>
           </div>
           <div class="device-card-actions">
@@ -407,16 +474,14 @@
           </div>
         </div>
 
-        <!-- 2. No Active Device Notice (when disconnected) -->
         <div id="noDeviceCard" class="device-status-card empty-device-card hidden">
           <div class="device-info-left">
             <span class="device-model">No TV Connected</span>
             <span class="device-app" style="color:var(--text-muted)">Connect via IP or scan your local Wi-Fi</span>
           </div>
-          <button id="connectDeviceBtn" class="btn-primary-action btn-sm" style="width:auto; padding:8px 14px;">Connect TV</button>
+          <button id="connectDeviceBtn" class="btn-primary-action btn-sm">Connect TV</button>
         </div>
 
-        <!-- 3. Authorization Required Alert Banner -->
         <div id="authAlert" class="modal-alert-box auth-alert-theme hidden">
           <div class="alert-icon">⚠️</div>
           <div class="alert-body">
@@ -426,7 +491,6 @@
           <button id="authRetryBtn" class="btn-retry">I Allowed It</button>
         </div>
 
-        <!-- 4. ADB Disabled Alert Banner with Live Watcher -->
         <div id="adbAlert" class="modal-alert-box adb-alert-theme hidden">
           <div class="alert-icon">⚡</div>
           <div class="alert-body">
@@ -440,7 +504,6 @@
           <button id="showGuideBtn" class="btn-retry btn-orange">Show Steps</button>
         </div>
 
-        <!-- 5. Quick Scanner Shortcut Button -->
         <div class="status-modal-footer">
           <button id="scanFromStatusBtn" class="btn-secondary" style="width: 100%;">
             <span>📡 Open Network Scanner & Saved TVs</span>
@@ -450,7 +513,7 @@
     </div>
   </div>
 
-  <!-- MODAL: Device Manager & Network Scanner -->
+  <!-- MODAL 5: Device Manager & Network Scanner -->
   <div id="deviceModal" class="modal-overlay hidden">
     <div class="modal-card">
       <div class="modal-header">
@@ -459,7 +522,6 @@
       </div>
 
       <div class="modal-body">
-        <!-- Scan section -->
         <div class="scan-bar">
           <div>
             <strong>Auto Discovery</strong>
@@ -471,13 +533,11 @@
           </button>
         </div>
 
-        <!-- Discovered devices -->
         <div class="section-title">Discovered Devices</div>
         <div id="discoveredList" class="device-list">
           <div class="empty-state">Click "Scan Network" or enter IP below</div>
         </div>
 
-        <!-- Manual IP Connection -->
         <div class="section-title">Manual Connection</div>
         <form id="manualConnectForm" class="manual-form">
           <div class="form-row">
@@ -487,7 +547,6 @@
           <button type="submit" class="btn-primary-action" id="manualConnectBtn">Connect by IP</button>
         </form>
 
-        <!-- Saved Devices -->
         <div class="section-title">Saved Devices</div>
         <div id="savedList" class="device-list">
           <!-- Populated by JS -->
@@ -496,7 +555,7 @@
     </div>
   </div>
 
-  <!-- MODAL: Pair Phone QR Code -->
+  <!-- MODAL 6: Pair Phone QR Code -->
   <div id="qrModal" class="modal-overlay hidden">
     <div class="modal-card modal-qr">
       <div class="modal-header">
@@ -516,7 +575,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ADB Setup Guide -->
+  <!-- MODAL 7: ADB Setup Guide -->
   <div id="helpModal" class="modal-overlay hidden">
     <div class="modal-card modal-help">
       <div class="modal-header">
@@ -562,6 +621,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=2.2.0"></script>
+  <script src="/app.js?v=3.1.0"></script>
 </body>
 </html>

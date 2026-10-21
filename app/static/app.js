@@ -1,4 +1,5 @@
 // Fire TV Remote Pro - Client Application & Smart Length Sizer Engine
+// Strictly modeled after official Amazon Fire TV Mobile App
 (() => {
   // State
   let ws = null;
@@ -6,8 +7,35 @@
   let currentState = "disconnected";
   let connectedDevice = null;
   let pollInterval = null;
+  let vibrationEnabled = localStorage.getItem("firetv_vibration") !== "false";
+  let currentControllerMode = localStorage.getItem("firetv_controller_mode") || "dpad";
+  let currentDrawerTab = "apps";
 
-  // DOM Elements
+  // DOM Elements - Top Bar
+  const sleepBtn = document.getElementById("sleepBtn");
+  const deviceBarBtn = document.getElementById("deviceBarBtn");
+  const headerDeviceName = document.getElementById("headerDeviceName");
+  const dotsMenuBtn = document.getElementById("dotsMenuBtn");
+
+  // DOM Elements - Controller & Satellites
+  const slidersSettingsBtn = document.getElementById("slidersSettingsBtn");
+  const openKeyboardBtn = document.getElementById("openKeyboardBtn");
+  const controllerWrapper = document.getElementById("controllerWrapper");
+  const dpadController = document.getElementById("dpadController");
+  const trackpadController = document.getElementById("trackpadController");
+  const fireTrackpadSurface = document.getElementById("fireTrackpadSurface");
+
+  // DOM Elements - Bottom Drawer
+  const drawerTabBtns = document.querySelectorAll(".drawer-tab-btn");
+  const drawerTabMedia = document.getElementById("drawerTabMedia");
+  const drawerTabApps = document.getElementById("drawerTabApps");
+  const drawerTabChannels = document.getElementById("drawerTabChannels");
+  const drawerAppsRow = document.getElementById("drawerAppsRow");
+  const appsGrid = document.getElementById("appsGrid");
+  const customPackageInput = document.getElementById("customPackageInput");
+  const launchCustomBtn = document.getElementById("launchCustomBtn");
+
+  // DOM Elements - Compatibility / Status
   const statusBtn = document.getElementById("statusBtn");
   const statusText = document.getElementById("statusText");
   const deviceAlertsBtn = document.getElementById("deviceAlertsBtn");
@@ -17,6 +45,8 @@
   const powerBtn = document.getElementById("powerBtn");
   const mobileQrBtn = document.getElementById("mobileQrBtn");
   const helpBtn = document.getElementById("helpBtn");
+
+  // DOM Elements - Device Status Modal
   const deviceBar = document.getElementById("deviceBar");
   const deviceModel = document.getElementById("deviceModel");
   const deviceApp = document.getElementById("deviceApp");
@@ -33,7 +63,31 @@
   const showGuideBtn = document.getElementById("showGuideBtn");
   let adbWatcherInterval = null;
 
-  // Modals
+  // DOM Elements - Modals
+  const remoteSettingsModal = document.getElementById("remoteSettingsModal");
+  const closeRemoteSettingsBtn = document.getElementById("closeRemoteSettingsBtn");
+  const moreRemoteSettingsLink = document.getElementById("moreRemoteSettingsLink");
+  const tvControlSetupBtn = document.getElementById("tvControlSetupBtn");
+  const radioDpad = document.getElementById("radioDpad");
+  const radioTrackpad = document.getElementById("radioTrackpad");
+  const optionDpad = document.getElementById("optionDpad");
+  const optionTrackpad = document.getElementById("optionTrackpad");
+  const vibrationToggle = document.getElementById("vibrationToggle");
+
+  const keyboardModal = document.getElementById("keyboardModal");
+  const closeKeyboardModal = document.getElementById("closeKeyboardModal");
+  const textInput = document.getElementById("textInput");
+  const sendTextBtn = document.getElementById("sendTextBtn");
+  const clearTextBtn = document.getElementById("clearTextBtn");
+
+  const dotsMenuModal = document.getElementById("dotsMenuModal");
+  const closeDotsMenuBtn = document.getElementById("closeDotsMenuBtn");
+  const dotsConnectBtn = document.getElementById("dotsConnectBtn");
+  const dotsDesktopBtn = document.getElementById("dotsDesktopBtn");
+  const dotsQrBtn = document.getElementById("dotsQrBtn");
+  const dotsHelpBtn = document.getElementById("dotsHelpBtn");
+  const dotsDisconnectBtn = document.getElementById("dotsDisconnectBtn");
+
   const deviceStatusModal = document.getElementById("deviceStatusModal");
   const closeDeviceStatusModal = document.getElementById("closeDeviceStatusModal");
   const deviceModal = document.getElementById("deviceModal");
@@ -56,21 +110,7 @@
   const closeHelpModal = document.getElementById("closeHelpModal");
   const gotItBtn = document.getElementById("gotItBtn");
 
-  // Keyboard Pane
-  const textInput = document.getElementById("textInput");
-  const sendTextBtn = document.getElementById("sendTextBtn");
-  const clearTextBtn = document.getElementById("clearTextBtn");
-
-  // Apps Pane
-  const appsGrid = document.getElementById("appsGrid");
-  const customPackageInput = document.getElementById("customPackageInput");
-  const launchCustomBtn = document.getElementById("launchCustomBtn");
-
-  // Trackpad
-  const trackpadSurface = document.getElementById("trackpadSurface");
-  const trackpadRipple = document.getElementById("trackpadRipple");
-
-  // TV Monitor Elements
+  // TV Monitor Elements (Desktop Studio Mode)
   const studioTvMonitor = document.getElementById("studioTvMonitor");
   const tvScreenFrame = document.getElementById("tvScreenFrame");
   const tvScreenImg = document.getElementById("tvScreenImg");
@@ -84,10 +124,10 @@
   const tvConnectPromptBtn = document.getElementById("tvConnectPromptBtn");
 
   // ----------------------------------------------------
-  // Haptic Feedback
+  // Haptic Vibration Feedback
   // ----------------------------------------------------
   function triggerHaptic(duration = 15) {
-    if ("vibrate" in navigator) {
+    if (vibrationEnabled && "vibrate" in navigator) {
       try {
         navigator.vibrate(duration);
       } catch (e) {}
@@ -95,15 +135,13 @@
   }
 
   // ----------------------------------------------------
-  // 1. SMART LENGTH ENGINE (Dynamic JavaScript Auto-Sizing)
+  // 1. SMART LENGTH ENGINE (Dynamic Adaptive Geometry)
   // ----------------------------------------------------
   const SmartLengthEngine = {
     rafId: null,
 
     init() {
       this.update = this.update.bind(this);
-
-      // Listen to all visual viewport, window, orientation, and container size changes
       if (window.visualViewport) {
         window.visualViewport.addEventListener("resize", this.requestUpdate.bind(this));
         window.visualViewport.addEventListener("scroll", this.requestUpdate.bind(this));
@@ -111,14 +149,12 @@
       window.addEventListener("resize", this.requestUpdate.bind(this));
       window.addEventListener("orientationchange", this.requestUpdate.bind(this));
 
-      // ResizeObserver on main container
       const appEl = document.getElementById("app");
       if (window.ResizeObserver && appEl) {
         const ro = new ResizeObserver(() => this.requestUpdate());
         ro.observe(appEl);
       }
 
-      // Initial execution
       this.update();
     },
 
@@ -126,7 +162,6 @@
       if (this.rafId) cancelAnimationFrame(this.rafId);
       this.rafId = requestAnimationFrame(() => {
         this.update();
-        this.ensureZeroScroll();
       });
     },
 
@@ -135,152 +170,182 @@
       const viewportHeight = vv ? Math.round(vv.height) : window.innerHeight;
       const viewportWidth  = vv ? Math.round(vv.width)  : window.innerWidth;
 
-      // ── 1. Persist actual viewport dimensions ──────────────────────────────
       document.documentElement.style.setProperty("--app-actual-height", `${viewportHeight}px`);
       document.documentElement.style.setProperty("--app-actual-width",  `${viewportWidth}px`);
 
-      // ── 2. Classify the screen so layout decisions are centralised here ────
-      //
-      //  "phone"   → narrow portrait phones   (width < 480)
-      //  "phablet" → large phones / small tabs (480–767)
-      //  "tablet"  → tablets / small laptops   (768–1199)
-      //  "desktop" → widescreen / large display (≥1200)
-      //
+      const isDesktop = document.body.classList.contains("desktop-studio-active");
       const isLandscapePhone = viewportWidth > viewportHeight && viewportHeight <= 540;
-      // For a landscape phone use the SHORT dimension to classify
-      const classifyWidth = isLandscapePhone ? viewportHeight : viewportWidth;
-      let screenClass;
-      if      (classifyWidth < 480)  screenClass = "phone";
-      else if (classifyWidth < 768)  screenClass = "phablet";
-      else if (classifyWidth < 1200) screenClass = "tablet";
-      else                           screenClass = "desktop";
 
-      // Propagate class to <html> so CSS can also react
-      document.documentElement.dataset.screen = screenClass;
+      // Calculate available height for stage
+      const topBarH = 50;
+      const drawerH = 100;
+      const netStageH = Math.max(260, viewportHeight - topBarH - drawerH - 24);
 
-      // ── 3. Compute container max-width and horizontal padding ──────────────
-      let maxWidth, padX, padTop, padBottom;
-      const safeTop    = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--sait") || "0") || 0;
-      const safeBottom = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--saib") || "0") || 0;
-
-      if (screenClass === "phone" || isLandscapePhone) {
-        // Fill the full screen on phones (portrait or landscape) — no wasted margins
-        maxWidth  = viewportWidth;
-        padX      = Math.max(10, Math.round(Math.min(viewportWidth, viewportHeight) * 0.04));
-        padTop    = Math.max(8, safeTop);
-        padBottom = Math.max(8, safeBottom);
-      } else if (screenClass === "phablet") {
-        // Fill the width but add modest breathing room
-        maxWidth  = viewportWidth;
-        padX      = Math.max(14, Math.round(viewportWidth * 0.045));
-        padTop    = Math.max(10, safeTop);
-        padBottom = Math.max(10, safeBottom);
-      } else if (screenClass === "tablet") {
-        // Centre at a comfortable reading width, no wider than the screen
-        maxWidth  = Math.min(viewportWidth, 560);
-        padX      = Math.max(18, Math.round(viewportWidth * 0.05));
-        padTop    = Math.max(12, safeTop);
-        padBottom = Math.max(12, safeBottom);
-      } else {
-        // Desktop — handled by desktop-studio CSS, but cap the compact remote
-        maxWidth  = document.body.classList.contains("desktop-studio-active")
-                      ? Math.min(1520, Math.round(viewportWidth * 0.96))
-                      : Math.min(480, Math.round(viewportWidth * 0.38));
-        padX      = 24;
-        padTop    = 14;
-        padBottom = 14;
-      }
-
-      document.documentElement.style.setProperty("--app-max-width",    `${maxWidth}px`);
-      document.documentElement.style.setProperty("--app-pad-x",        `${padX}px`);
-      document.documentElement.style.setProperty("--app-pad-top",      `${padTop}px`);
-      document.documentElement.style.setProperty("--app-pad-bottom",   `${padBottom}px`);
-
-      // ── 4. Measure remaining vertical space for controls ──────────────────
-      const headerEl    = document.querySelector(".header");
-      const navEl       = document.querySelector(".nav-tabs");
-      const hintsEl     = document.querySelector(".desktop-hints");
-      const remotePane  = document.getElementById("tab-remote");
-      const isDesktop   = document.body.classList.contains("desktop-studio-active");
-
-      const headerH = headerEl ? headerEl.offsetHeight : 44;
-      const navH    = (navEl && navEl.offsetParent !== null) ? navEl.offsetHeight : 0;
-      const hintsH  = (hintsEl && hintsEl.offsetParent !== null) ? hintsEl.offsetHeight : 0;
-
-      const overhead       = headerH + navH + hintsH + padTop + padBottom;
-      const availableNetH  = Math.max(260, viewportHeight - overhead);
-
-      // ── 5. Compute proportional control sizes ─────────────────────────────
-      let dpadSize, btnSize, playSize, gapSize;
-
-      if (isDesktop && remotePane && remotePane.clientHeight > 100) {
-        // Desktop Studio Mode: Base calculations directly on the actual Column 1 remote container height
-        const remoteH = remotePane.clientHeight - 24;
-        dpadSize = Math.max(120, Math.min(235, Math.round(remoteH * 0.38)));
-        btnSize  = Math.max(34,  Math.min(48,  Math.round(remoteH * 0.088)));
-        playSize = Math.max(40,  Math.min(56,  Math.round(remoteH * 0.105)));
-        gapSize  = Math.max(4,   Math.min(12,  Math.round(remoteH * 0.018)));
+      let dpadSize, satSize;
+      if (isDesktop) {
+        dpadSize = Math.max(180, Math.min(265, Math.round(netStageH * 0.58)));
+        satSize = Math.max(46, Math.min(56, Math.round(dpadSize * 0.22)));
       } else if (isLandscapePhone) {
-        dpadSize = Math.max(120, Math.min(180, Math.round(viewportHeight * 0.55)));
-        btnSize  = Math.max(36,  Math.min(44,  Math.round(viewportHeight * 0.11)));
-        playSize = Math.max(42,  Math.min(50,  Math.round(viewportHeight * 0.12)));
-        gapSize  = 5;
-      } else if (availableNetH < 440) {
-        dpadSize = Math.max(130, Math.min(170, Math.round(availableNetH * 0.38), Math.round(viewportWidth * 0.50)));
-        btnSize  = Math.max(36,  Math.min(42,  Math.round(availableNetH * 0.085)));
-        playSize = Math.max(44,  Math.min(50,  Math.round(availableNetH * 0.10)));
-        gapSize  = 4;
-      } else if (availableNetH < 620) {
-        dpadSize = Math.max(160, Math.min(210, Math.round(availableNetH * 0.36), Math.round(viewportWidth * 0.54)));
-        btnSize  = Math.max(42,  Math.min(50,  Math.round(availableNetH * 0.09)));
-        playSize = Math.max(50,  Math.min(58,  Math.round(availableNetH * 0.105)));
-        gapSize  = Math.min(12, Math.max(6, Math.round(availableNetH * 0.018)));
+        dpadSize = Math.max(140, Math.min(190, Math.round(viewportHeight * 0.50)));
+        satSize = Math.max(40, Math.min(48, Math.round(dpadSize * 0.24)));
+      } else if (netStageH < 380) {
+        dpadSize = Math.max(170, Math.min(220, Math.round(netStageH * 0.55), Math.round(viewportWidth * 0.58)));
+        satSize = Math.max(42, Math.min(48, Math.round(dpadSize * 0.22)));
+      } else if (netStageH < 520) {
+        dpadSize = Math.max(210, Math.min(250, Math.round(netStageH * 0.52), Math.round(viewportWidth * 0.62)));
+        satSize = Math.max(48, Math.min(54, Math.round(dpadSize * 0.22)));
       } else {
-        dpadSize = Math.max(180, Math.min(240, Math.round(availableNetH * 0.35), Math.round(maxWidth * 0.54)));
-        btnSize  = Math.min(54, Math.max(46, Math.round(availableNetH * 0.075)));
-        playSize = Math.min(62, Math.max(54, Math.round(availableNetH * 0.088)));
-        gapSize  = Math.min(16, Math.max(8, Math.round(availableNetH * 0.02)));
+        dpadSize = Math.max(230, Math.min(270, Math.round(netStageH * 0.48), Math.round(viewportWidth * 0.64)));
+        satSize = Math.min(56, Math.max(50, Math.round(dpadSize * 0.22)));
       }
 
-      const centerSize = Math.round(dpadSize * 0.38);
-      const tvHeight   = Math.min(Math.round(availableNetH * 0.72), 520);
-
-      document.documentElement.style.setProperty("--smart-dpad-size",      `${dpadSize}px`);
-      document.documentElement.style.setProperty("--smart-dpad-center",    `${centerSize}px`);
-      document.documentElement.style.setProperty("--smart-btn-size",       `${btnSize}px`);
-      document.documentElement.style.setProperty("--smart-play-btn-size",  `${playSize}px`);
-      document.documentElement.style.setProperty("--smart-gap",            `${gapSize}px`);
-      document.documentElement.style.setProperty("--smart-tv-height",      `${tvHeight}px`);
+      document.documentElement.style.setProperty("--smart-dpad-size", `${dpadSize}px`);
+      document.documentElement.style.setProperty("--smart-satellite-size", `${satSize}px`);
 
       if (tvScreenFrame) {
-        tvScreenFrame.style.maxHeight = `${Math.min(Math.round(availableNetH * 0.62), 450)}px`;
-      }
-    },
-
-    // Zero-Scroll Guarantee: Ensures remote deck never overflows available page length
-    ensureZeroScroll() {
-      const remoteDeck = document.querySelector(".remote-deck");
-      const remotePane = document.getElementById("tab-remote");
-      if (!remoteDeck || !remotePane) return;
-
-      const isDesktop = document.body.classList.contains("desktop-studio-active");
-      const isVisible = isDesktop || remotePane.classList.contains("active");
-      if (!isVisible) return;
-
-      remoteDeck.style.transform = "";
-      const availableHeight = remotePane.clientHeight;
-      const scrollHeight = remoteDeck.scrollHeight;
-
-      if (availableHeight > 60 && scrollHeight > availableHeight) {
-        const scaleFactor = Math.max(0.60, (availableHeight - 6) / scrollHeight);
-        remoteDeck.style.transform = `scale(${scaleFactor.toFixed(3)})`;
-        remoteDeck.style.transformOrigin = "center center";
+        tvScreenFrame.style.maxHeight = `${Math.min(Math.round(netStageH * 0.75), 450)}px`;
       }
     }
   };
 
   // ----------------------------------------------------
-  // 2. DESKTOP STUDIO MODE CONTROLLER
+  // 2. CONTROLLER MODE: D-PAD vs TRACKPAD (Image 2)
+  // ----------------------------------------------------
+  function setControllerMode(mode) {
+    currentControllerMode = mode;
+    localStorage.setItem("firetv_controller_mode", mode);
+
+    if (mode === "trackpad") {
+      controllerWrapper.classList.remove("dpad-mode");
+      controllerWrapper.classList.add("trackpad-mode");
+      dpadController.classList.add("hidden");
+      trackpadController.classList.remove("hidden");
+      if (radioTrackpad) radioTrackpad.checked = true;
+      if (radioDpad) radioDpad.checked = false;
+    } else {
+      controllerWrapper.classList.remove("trackpad-mode");
+      controllerWrapper.classList.add("dpad-mode");
+      trackpadController.classList.add("hidden");
+      dpadController.classList.remove("hidden");
+      if (radioDpad) radioDpad.checked = true;
+      if (radioTrackpad) radioTrackpad.checked = false;
+    }
+    triggerHaptic(15);
+  }
+
+  if (optionDpad) {
+    optionDpad.addEventListener("click", () => setControllerMode("dpad"));
+  }
+  if (optionTrackpad) {
+    optionTrackpad.addEventListener("click", () => setControllerMode("trackpad"));
+  }
+
+  // ----------------------------------------------------
+  // 3. VIBRATION SETTING TOGGLE
+  // ----------------------------------------------------
+  if (vibrationToggle) {
+    vibrationToggle.checked = vibrationEnabled;
+    vibrationToggle.addEventListener("change", (e) => {
+      vibrationEnabled = e.target.checked;
+      localStorage.setItem("firetv_vibration", vibrationEnabled ? "true" : "false");
+      triggerHaptic(25);
+    });
+  }
+
+  // ----------------------------------------------------
+  // 4. TRACKPAD SWIPE & TAP GESTURE RECOGNITION (Image 3)
+  // ----------------------------------------------------
+  let tpStartX = 0;
+  let tpStartY = 0;
+  let tpStartTime = 0;
+  let tpHasMoved = false;
+
+  if (fireTrackpadSurface) {
+    const handleTpStart = (e) => {
+      const pt = e.touches ? e.touches[0] : e;
+      tpStartX = pt.clientX;
+      tpStartY = pt.clientY;
+      tpStartTime = Date.now();
+      tpHasMoved = false;
+    };
+
+    const handleTpMove = (e) => {
+      if (e.cancelable) e.preventDefault();
+      const pt = e.touches ? e.touches[0] : e;
+      const dx = pt.clientX - tpStartX;
+      const dy = pt.clientY - tpStartY;
+
+      if (Math.hypot(dx, dy) > 8) {
+        tpHasMoved = true;
+      }
+
+      const threshold = 26;
+      if (Math.abs(dx) >= threshold) {
+        sendKey(dx > 0 ? "RIGHT" : "LEFT");
+        tpStartX = pt.clientX;
+        tpStartY = pt.clientY;
+        triggerHaptic(12);
+      } else if (Math.abs(dy) >= threshold) {
+        sendKey(dy > 0 ? "DOWN" : "UP");
+        tpStartX = pt.clientX;
+        tpStartY = pt.clientY;
+        triggerHaptic(12);
+      }
+    };
+
+    const handleTpEnd = (e) => {
+      const elapsed = Date.now() - tpStartTime;
+      if (!tpHasMoved || elapsed < 220) {
+        sendKey("SELECT");
+        triggerHaptic(20);
+      }
+      tpHasMoved = false;
+    };
+
+    fireTrackpadSurface.addEventListener("touchstart", handleTpStart, { passive: false });
+    fireTrackpadSurface.addEventListener("touchmove", handleTpMove, { passive: false });
+    fireTrackpadSurface.addEventListener("touchend", handleTpEnd);
+    fireTrackpadSurface.addEventListener("mousedown", handleTpStart);
+    window.addEventListener("mousemove", (e) => {
+      if (tpStartTime > 0 && e.buttons === 1) handleTpMove(e);
+    });
+    window.addEventListener("mouseup", (e) => {
+      if (tpStartTime > 0) {
+        handleTpEnd(e);
+        tpStartTime = 0;
+      }
+    });
+  }
+
+  // ----------------------------------------------------
+  // 5. BOTTOM DRAWER TABS (Media | Apps | Channels)
+  // ----------------------------------------------------
+  function setDrawerTab(tabId) {
+    currentDrawerTab = tabId;
+    drawerTabBtns.forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.drawerTab === tabId);
+    });
+
+    if (drawerTabMedia) drawerTabMedia.classList.toggle("hidden", tabId !== "media");
+    if (drawerTabMedia) drawerTabMedia.classList.toggle("active", tabId === "media");
+
+    if (drawerTabApps) drawerTabApps.classList.toggle("hidden", tabId !== "apps");
+    if (drawerTabApps) drawerTabApps.classList.toggle("active", tabId === "apps");
+
+    if (drawerTabChannels) drawerTabChannels.classList.toggle("hidden", tabId !== "channels");
+    if (drawerTabChannels) drawerTabChannels.classList.toggle("active", tabId === "channels");
+
+    triggerHaptic(12);
+  }
+
+  drawerTabBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setDrawerTab(btn.dataset.drawerTab);
+    });
+  });
+
+  // ----------------------------------------------------
+  // 6. DESKTOP STUDIO MODE CONTROLLER
   // ----------------------------------------------------
   let isDesktopStudio = localStorage.getItem("firetv_desktop_studio") === "true";
 
@@ -289,18 +354,6 @@
     localStorage.setItem("firetv_desktop_studio", enabled ? "true" : "false");
     document.body.classList.toggle("desktop-studio-active", enabled);
 
-    if (desktopModeBtn) {
-      desktopModeBtn.classList.toggle("active", enabled);
-      desktopModeBtn.title = enabled ? "Switch to Handheld Remote Mode" : "Switch to Desktop Studio Mode";
-    }
-
-    if (enabled && currentActiveTab === "remote") {
-      currentActiveTab = lastDesktopToolTab || "apps";
-    } else if (!enabled && currentActiveTab !== "remote") {
-      currentActiveTab = "remote";
-    }
-
-    syncTabsForScreen();
     SmartLengthEngine.update();
 
     if (enabled) {
@@ -311,15 +364,8 @@
     }
   }
 
-  if (desktopModeBtn) {
-    desktopModeBtn.addEventListener("click", () => {
-      setDesktopMode(!isDesktopStudio);
-      triggerHaptic(15);
-    });
-  }
-
   // ----------------------------------------------------
-  // 3. LIVE TV SCREEN MONITOR ENGINE
+  // 7. LIVE TV MONITOR ENGINE
   // ----------------------------------------------------
   const TvMonitor = {
     isLiveSyncActive: true,
@@ -330,7 +376,6 @@
     init() {
       if (!tvScreenImg) return;
 
-      // Handle image load / error
       tvScreenImg.addEventListener("load", () => {
         this.isFetching = false;
         if (tvScreenPlaceholder) tvScreenPlaceholder.classList.add("hidden");
@@ -347,7 +392,6 @@
         }
       });
 
-      // Capture button
       if (tvRefreshBtn) {
         tvRefreshBtn.addEventListener("click", () => {
           this.fetchScreen();
@@ -355,7 +399,6 @@
         });
       }
 
-      // Live Sync toggle button
       if (tvLiveSyncBtn) {
         tvLiveSyncBtn.addEventListener("click", () => {
           this.isLiveSyncActive = !this.isLiveSyncActive;
@@ -373,7 +416,6 @@
         });
       }
 
-      // Fullscreen button
       if (tvFullscreenBtn && tvScreenFrame) {
         tvFullscreenBtn.addEventListener("click", () => {
           if (!document.fullscreenElement) {
@@ -384,33 +426,9 @@
         });
       }
 
-      // Check connection button inside placeholder
       if (tvConnectPromptBtn) {
         tvConnectPromptBtn.addEventListener("click", () => {
           deviceModal.classList.remove("hidden");
-        });
-      }
-
-      // Interactive Click on TV screen (D-pad touch regions)
-      if (tvScreenFrame) {
-        tvScreenFrame.addEventListener("click", (e) => {
-          if (e.target.closest(".tv-controls-bar") || e.target.closest("button")) return;
-          const rect = tvScreenFrame.getBoundingClientRect();
-          const clickX = (e.clientX - rect.left) / rect.width;
-          const clickY = (e.clientY - rect.top) / rect.height;
-
-          // Determine quadrant: Left, Right, Up, Down, or Center OK
-          if (clickX >= 0.30 && clickX <= 0.70 && clickY >= 0.30 && clickY <= 0.70) {
-            sendKey("SELECT");
-          } else if (clickX < 0.28) {
-            sendKey("LEFT");
-          } else if (clickX > 0.72) {
-            sendKey("RIGHT");
-          } else if (clickY < 0.30) {
-            sendKey("UP");
-          } else {
-            sendKey("DOWN");
-          }
         });
       }
 
@@ -425,9 +443,7 @@
       this.isFetching = true;
       try {
         const res = await fetch(`/api/screenshot?t=${Date.now()}`);
-        if (!res.ok) {
-          throw new Error("Screen capture offline");
-        }
+        if (!res.ok) throw new Error("Screen capture offline");
         const blob = await res.blob();
         if (blob && blob.size > 200) {
           const objectUrl = URL.createObjectURL(blob);
@@ -447,7 +463,6 @@
     startLiveSync() {
       this.stopLiveSync();
       if (!this.isLiveSyncActive) return;
-      // Refresh screen snapshot every 1.8 seconds in desktop studio mode
       this.syncInterval = setInterval(() => {
         if (currentState === "connected" && (isDesktopStudio || window.innerWidth >= 1024)) {
           this.fetchScreen();
@@ -462,7 +477,6 @@
       }
     },
 
-    // Fast reaction: Refresh screenshot 350ms after sending a key command
     scheduleImmediateRefresh(delay = 350) {
       if (this.refreshTimeout) clearTimeout(this.refreshTimeout);
       this.refreshTimeout = setTimeout(() => {
@@ -474,7 +488,7 @@
   };
 
   // ----------------------------------------------------
-  // WebSocket Setup (Ultra-Low Latency)
+  // 8. WEBSOCKET SETUP (Ultra-Low Latency)
   // ----------------------------------------------------
   function initWebSocket() {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -482,130 +496,85 @@
 
     try {
       ws = new WebSocket(wsUrl);
-
-      ws.onopen = () => {
-        isWsConnected = true;
-      };
-
+      ws.onopen = () => { isWsConnected = true; };
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === "status") {
             handleStatusUpdate(msg.data);
           }
-        } catch (e) {
-          console.error("WS parse error:", e);
-        }
+        } catch (e) {}
       };
-
       ws.onclose = () => {
         isWsConnected = false;
         setTimeout(initWebSocket, 2000);
       };
-
-      ws.onerror = () => {
-        isWsConnected = false;
-      };
-    } catch (e) {
-      console.warn("WebSocket not supported or failed:", e);
-    }
+      ws.onerror = () => { isWsConnected = false; };
+    } catch (e) {}
   }
 
   // ----------------------------------------------------
-  // Status Management
+  // 9. STATUS MANAGEMENT
   // ----------------------------------------------------
   function handleStatusUpdate(data) {
     currentState = data.state;
     connectedDevice = data;
 
-    statusBtn.className = "status-pill";
-    if (deviceAlertsBtn) deviceAlertsBtn.className = "device-alerts-pill";
-    if (deviceAlertBadge) deviceAlertBadge.classList.add("hidden");
+    const deviceName = data.device_name || "Arvind's FireTVStick";
+    if (headerDeviceName) headerDeviceName.textContent = deviceName;
+    if (deviceModel) deviceModel.textContent = deviceName;
+    if (devicePillText) devicePillText.textContent = deviceName;
 
     if (data.state === "connected") {
-      statusBtn.classList.add("connected");
-      statusText.textContent = "Connected";
-      if (devicePillText) devicePillText.textContent = data.info?.model || data.host || "Fire TV";
-
+      if (deviceApp) deviceApp.textContent = `App: ${data.info?.current_app || "Home"}`;
       if (deviceBar) deviceBar.classList.remove("hidden");
       if (noDeviceCard) noDeviceCard.classList.add("hidden");
-      deviceModel.textContent = data.info?.model || "Amazon Fire TV";
-      deviceApp.textContent = `App: ${data.info?.current_app || "Home"}`;
-      authAlert.classList.add("hidden");
-      adbAlert.classList.add("hidden");
+      if (authAlert) authAlert.classList.add("hidden");
+      if (adbAlert) adbAlert.classList.add("hidden");
       stopAdbWatcher();
       if (tvScreenPlaceholder) tvScreenPlaceholder.classList.add("hidden");
       TvMonitor.fetchScreen();
     } else if (data.state === "authorizing" || data.state === "unauthorized") {
-      statusBtn.classList.add("authorizing");
-      statusText.textContent = "Authorize on TV...";
-      if (devicePillText) devicePillText.textContent = "Auth Needed";
-      if (deviceAlertsBtn) deviceAlertsBtn.classList.add("has-alert");
-      if (deviceAlertBadge) {
-        deviceAlertBadge.textContent = "!";
-        deviceAlertBadge.className = "alert-badge amber-badge";
-        deviceAlertBadge.classList.remove("hidden");
-      }
-
       if (deviceBar) deviceBar.classList.add("hidden");
       if (noDeviceCard) noDeviceCard.classList.remove("hidden");
-      authAlert.classList.remove("hidden");
-      adbAlert.classList.add("hidden");
+      if (authAlert) authAlert.classList.remove("hidden");
+      if (adbAlert) adbAlert.classList.add("hidden");
       stopAdbWatcher();
-      if (tvScreenPlaceholder) tvScreenPlaceholder.classList.remove("hidden");
-    } else if (data.state === "connecting") {
-      statusBtn.classList.add("authorizing");
-      statusText.textContent = "Connecting...";
-      if (devicePillText) devicePillText.textContent = "Connecting...";
-      if (deviceBar) deviceBar.classList.add("hidden");
-      if (noDeviceCard) noDeviceCard.classList.remove("hidden");
-      authAlert.classList.add("hidden");
-      adbAlert.classList.add("hidden");
     } else {
-      statusBtn.classList.add("disconnected");
-      statusText.textContent = data.state === "error" ? "Connection Failed" : "Disconnected";
       if (deviceBar) deviceBar.classList.add("hidden");
       if (noDeviceCard) noDeviceCard.classList.remove("hidden");
-      authAlert.classList.add("hidden");
+      if (authAlert) authAlert.classList.add("hidden");
 
       if (data.state === "error" && data.last_error && (data.last_error.includes("ADB Debugging") || data.last_error.includes("refused"))) {
-        if (devicePillText) devicePillText.textContent = "ADB Off";
-        if (deviceAlertsBtn) deviceAlertsBtn.classList.add("has-error");
-        if (deviceAlertBadge) {
-          deviceAlertBadge.textContent = "!";
-          deviceAlertBadge.className = "alert-badge";
-          deviceAlertBadge.classList.remove("hidden");
-        }
-
-        adbAlert.classList.remove("hidden");
-        adbAlertTitle.textContent = `ADB Debugging is OFF on ${data.host || "Fire TV"}`;
+        if (adbAlert) adbAlert.classList.remove("hidden");
+        if (adbAlertTitle) adbAlertTitle.textContent = `ADB Debugging is OFF on ${data.host || "Fire TV"}`;
         startAdbWatcher(data.host);
       } else {
-        if (devicePillText) devicePillText.textContent = "Fire TV";
-        adbAlert.classList.add("hidden");
+        if (adbAlert) adbAlert.classList.add("hidden");
         stopAdbWatcher();
       }
-      if (tvScreenPlaceholder) tvScreenPlaceholder.classList.remove("hidden");
     }
 
-    if (data.apps && data.apps.length > 0 && appsGrid.children.length === 0) {
-      renderApps(data.apps);
+    if (data.apps && data.apps.length > 0) {
+      renderDrawerApps(data.apps);
+      if (appsGrid && appsGrid.children.length === 0) {
+        renderStudioApps(data.apps);
+      }
     }
 
     SmartLengthEngine.requestUpdate();
   }
 
   function startAdbWatcher(ip) {
-    if (!ip) return;
-    if (adbWatcherInterval) return;
-    adbPollStatus.textContent = `Watching ${ip} in real-time... toggle ADB ON on your TV`;
+    if (!ip || adbWatcherInterval) return;
+    if (adbPollStatus) adbPollStatus.textContent = `Watching ${ip} in real-time... toggle ADB ON on your TV`;
 
     adbWatcherInterval = setInterval(async () => {
       try {
         const res = await fetch(`/api/check-adb/${encodeURIComponent(ip)}`);
         const json = await res.json();
         if (json.adb_open) {
-          adbPollStatus.textContent = `✅ ADB Detected on ${ip}! Connecting now...`;
+          if (adbPollStatus) adbPollStatus.textContent = `✅ ADB Detected on ${ip}! Connecting now...`;
           stopAdbWatcher();
           setTimeout(() => {
             connectToDevice(ip, 5555);
@@ -627,9 +596,7 @@
       const res = await fetch("/api/status");
       const data = await res.json();
       handleStatusUpdate(data);
-    } catch (e) {
-      console.error("Error fetching status:", e);
-    }
+    } catch (e) {}
   }
 
   function startStatusPolling() {
@@ -638,12 +605,11 @@
   }
 
   // ----------------------------------------------------
-  // Key Sending (WebSocket + REST fallback)
+  // 10. KEY SENDING (Sub-50ms WebSocket + REST)
   // ----------------------------------------------------
   function sendKey(key) {
-    triggerHaptic(12);
+    triggerHaptic(14);
 
-    // Refresh live screen monitor only when Desktop Studio is actively viewing the TV screen
     if (document.body.classList.contains("desktop-studio-active")) {
       TvMonitor.scheduleImmediateRefresh(400);
     }
@@ -657,13 +623,14 @@
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key })
-    }).catch((e) => console.error("Failed to send key:", e));
+    }).catch(() => {});
   }
 
   // ----------------------------------------------------
-  // Text Input
+  // 11. TEXT & APPS
   // ----------------------------------------------------
   async function sendText() {
+    if (!textInput) return;
     const text = textInput.value;
     if (!text) return;
     triggerHaptic(20);
@@ -675,15 +642,11 @@
         body: JSON.stringify({ text })
       });
       textInput.value = "";
+      if (keyboardModal) keyboardModal.classList.add("hidden");
       TvMonitor.scheduleImmediateRefresh(400);
-    } catch (e) {
-      console.error("Error sending text:", e);
-    }
+    } catch (e) {}
   }
 
-  // ----------------------------------------------------
-  // App Launching
-  // ----------------------------------------------------
   async function launchApp(appId) {
     triggerHaptic(25);
     try {
@@ -694,27 +657,43 @@
       });
       fetchStatus();
       TvMonitor.scheduleImmediateRefresh(600);
-    } catch (e) {
-      console.error("Error launching app:", e);
-    }
+    } catch (e) {}
   }
 
-  function renderApps(apps) {
+  // Render Horizontal App Cards in Bottom Drawer (Image 1 Style)
+  function renderDrawerApps(apps) {
+    if (!drawerAppsRow) return;
+    drawerAppsRow.innerHTML = "";
+    apps.forEach((app) => {
+      const card = document.createElement("div");
+      card.className = "drawer-app-card";
+      card.title = app.name;
+      const rawIcon = app.icon || `/icons/apps/${app.id}.png`;
+      const iconSrc = rawIcon.includes("?") ? rawIcon : `${rawIcon}?v=3.1.0`;
+
+      card.innerHTML = `
+        <img src="${iconSrc}" alt="${app.name}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+        <span style="display:none; color:#fff; font-weight:700; font-size:0.75rem;">${app.name}</span>
+      `;
+      card.addEventListener("click", () => launchApp(app.id));
+      drawerAppsRow.appendChild(card);
+    });
+  }
+
+  // Render Studio Grid
+  function renderStudioApps(apps) {
+    if (!appsGrid) return;
     appsGrid.innerHTML = "";
     apps.forEach((app) => {
       const card = document.createElement("div");
       card.className = "app-card";
       const rawIcon = app.icon || `/icons/apps/${app.id}.png`;
-      const version = window.__APP_VERSION__ || "3.0.0";
-      const iconSrc = rawIcon.includes("?") ? rawIcon : `${rawIcon}?v=${version}`;
+      const iconSrc = rawIcon.includes("?") ? rawIcon : `${rawIcon}?v=3.1.0`;
       card.innerHTML = `
         <div class="app-icon-container">
-          <img src="${iconSrc}" class="app-icon-img" alt="${app.name}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-          <div class="app-badge-fallback" style="background: ${app.color || '#ff5722'}">
-            ${app.name.charAt(0)}
-          </div>
+          <img src="${iconSrc}" alt="${app.name}" loading="lazy" />
         </div>
-        <span class="app-title">${app.name}</span>
+        <span class="app-name">${app.name}</span>
       `;
       card.addEventListener("click", () => launchApp(app.id));
       appsGrid.appendChild(card);
@@ -722,252 +701,10 @@
   }
 
   // ----------------------------------------------------
-  // Trackpad Touch & Swipe Gestures
+  // 12. INSTANT 0MS BUTTON BINDING
   // ----------------------------------------------------
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let isPointerDown = false;
-
-  function showRipple(x, y) {
-    trackpadRipple.style.left = `${x - 25}px`;
-    trackpadRipple.style.top = `${y - 25}px`;
-    trackpadRipple.style.opacity = "1";
-    trackpadRipple.style.transform = "scale(2.5)";
-    setTimeout(() => {
-      trackpadRipple.style.opacity = "0";
-      trackpadRipple.style.transform = "scale(0)";
-    }, 200);
-  }
-
-  function handleTouchStart(e) {
-    const touch = e.touches ? e.touches[0] : e;
-    const rect = trackpadSurface.getBoundingClientRect();
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
-    isPointerDown = true;
-    showRipple(touch.clientX - rect.left, touch.clientY - rect.top);
-  }
-
-  function handleTouchMove(e) {
-    if (!isPointerDown) return;
-    if (e.cancelable) e.preventDefault();
-    const touch = e.touches ? e.touches[0] : e;
-    const diffX = touch.clientX - touchStartX;
-    const diffY = touch.clientY - touchStartY;
-
-    if (Math.abs(diffX) >= 36) {
-      if (diffX > 0) sendKey("RIGHT");
-      else sendKey("LEFT");
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-    } else if (Math.abs(diffY) >= 36) {
-      if (diffY > 0) sendKey("DOWN");
-      else sendKey("UP");
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-    }
-  }
-
-  function handleTouchEnd() {
-    isPointerDown = false;
-  }
-
-  trackpadSurface.addEventListener("touchstart", handleTouchStart, { passive: false });
-  trackpadSurface.addEventListener("touchmove", handleTouchMove, { passive: false });
-  trackpadSurface.addEventListener("touchend", handleTouchEnd);
-  trackpadSurface.addEventListener("mousedown", handleTouchStart);
-  window.addEventListener("mousemove", handleTouchMove);
-  window.addEventListener("mouseup", handleTouchEnd);
-
-  // ----------------------------------------------------
-  // Discovery & Device Connection
-  // ----------------------------------------------------
-  async function triggerScan() {
-    scanBtn.classList.add("scanning");
-    scanBtnText.textContent = "Scanning...";
-    discoveredList.innerHTML = `<div class="empty-state">Searching for Fire TVs on local Wi-Fi network...</div>`;
-
-    try {
-      const res = await fetch("/api/discover");
-      const data = await res.json();
-      renderDiscoveredDevices(data.devices);
-    } catch (e) {
-      discoveredList.innerHTML = `<div class="empty-state">Scan failed: ${e.message}</div>`;
-    } finally {
-      scanBtn.classList.remove("scanning");
-      scanBtnText.textContent = "Scan Network";
-    }
-  }
-
-  function renderDiscoveredDevices(devices) {
-    if (!devices || devices.length === 0) {
-      discoveredList.innerHTML = `
-        <div class="empty-state">
-          No Fire TVs found.<br>
-          Make sure your Fire TV is on the same Wi-Fi and has <strong>ADB Debugging ON</strong>.
-        </div>
-      `;
-      return;
-    }
-
-    discoveredList.innerHTML = "";
-    devices.forEach((dev) => {
-      const item = document.createElement("div");
-      item.className = "device-item";
-      item.innerHTML = `
-        <div class="device-meta">
-          <span class="device-item-name">${dev.name || "Amazon Fire TV"}</span>
-          <span class="device-item-ip">${dev.ip} ${dev.adb_available ? "• ADB Ready" : ""}</span>
-        </div>
-        <button class="btn-secondary">Connect</button>
-      `;
-      item.querySelector("button").addEventListener("click", () => {
-        connectToDevice(dev.ip, 5555, dev.name);
-      });
-      discoveredList.appendChild(item);
-    });
-  }
-
-  async function loadSavedDevices() {
-    try {
-      const res = await fetch("/api/saved-devices");
-      const devices = await res.json();
-      renderSavedDevices(devices);
-    } catch (e) {
-      console.error("Error loading saved devices:", e);
-    }
-  }
-
-  function renderSavedDevices(devices) {
-    if (!devices || devices.length === 0) {
-      savedList.innerHTML = `<div class="empty-state">No saved devices yet.</div>`;
-      return;
-    }
-
-    savedList.innerHTML = "";
-    devices.forEach((dev) => {
-      const item = document.createElement("div");
-      item.className = "device-item";
-      item.innerHTML = `
-        <div class="device-meta">
-          <span class="device-item-name">${dev.name || "Fire TV"}</span>
-          <span class="device-item-ip">${dev.host}:${dev.port || 5555}</span>
-        </div>
-        <div style="display:flex; gap:6px;">
-          <button class="btn-secondary btn-connect-saved">Connect</button>
-          <button class="btn-close btn-del-saved" title="Delete">✕</button>
-        </div>
-      `;
-      item.querySelector(".btn-connect-saved").addEventListener("click", () => {
-        connectToDevice(dev.host, dev.port || 5555, dev.name);
-      });
-      item.querySelector(".btn-del-saved").addEventListener("click", async (e) => {
-        e.stopPropagation();
-        await fetch(`/api/saved-devices/${encodeURIComponent(dev.host)}`, { method: "DELETE" });
-        loadSavedDevices();
-      });
-      savedList.appendChild(item);
-    });
-  }
-
-  async function connectToDevice(host, port = 5555, name = "") {
-    triggerHaptic(20);
-    deviceModal.classList.add("hidden");
-    handleStatusUpdate({ state: "connecting", host, port });
-
-    try {
-      const res = await fetch("/api/connect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ host, port, name, save: true })
-      });
-      const data = await res.json();
-      handleStatusUpdate(data);
-      loadSavedDevices();
-    } catch (e) {
-      handleStatusUpdate({ state: "error", host, port, last_error: e.message });
-    }
-  }
-
-  async function openQrModal() {
-    try {
-      const res = await fetch("/api/server-info");
-      const info = await res.json();
-      const qrRes = await fetch("/api/qr");
-      const svgText = await qrRes.text();
-
-      qrContainer.innerHTML = svgText;
-      qrUrlInput.value = info.mobile_url;
-      qrModal.classList.remove("hidden");
-    } catch (e) {
-      console.error("Error loading QR code:", e);
-    }
-  }
-
-  // ----------------------------------------------------
-  // Navigation Tabs & Layout Synchronization
-  // ----------------------------------------------------
-  let currentActiveTab = "remote";
-  let lastDesktopToolTab = "apps";
-
-  function syncTabsForScreen() {
-    const isStudioActive = document.body.classList.contains("desktop-studio-active");
-
-    if (isStudioActive) {
-      // In Desktop Studio mode, the remote is permanently docked in Column 1.
-      // If currentActiveTab is "remote", switch it to the last active desktop tool tab
-      if (currentActiveTab === "remote") {
-        currentActiveTab = lastDesktopToolTab || "apps";
-      } else {
-        lastDesktopToolTab = currentActiveTab;
-      }
-
-      // Update active highlight on visible nav tabs (Trackpad, Keyboard, Apps)
-      document.querySelectorAll(".nav-tab").forEach((t) => {
-        t.classList.toggle("active", t.dataset.tab === currentActiveTab);
-      });
-
-      // 3-Column Desktop Studio Mode:
-      // Column 1: Remote is always visible
-      const remotePane = document.getElementById("tab-remote");
-      if (remotePane) remotePane.classList.add("active");
-
-      // Column 3: The selected tool pane (Trackpad, Keyboard, or Apps)
-      ["trackpad", "keyboard", "apps"].forEach((tabKey) => {
-        const pane = document.getElementById(`tab-${tabKey}`);
-        if (pane) {
-          pane.classList.toggle("active", tabKey === currentActiveTab);
-        }
-      });
-    } else {
-      // Standard Handheld Remote Mode:
-      // Update active highlight on all nav tabs
-      document.querySelectorAll(".nav-tab").forEach((t) => {
-        t.classList.toggle("active", t.dataset.tab === currentActiveTab);
-      });
-
-      // EXACTLY ONE TAB IS ACTIVE AT ANY TIME!
-      ["remote", "trackpad", "keyboard", "apps"].forEach((tabKey) => {
-        const pane = document.getElementById(`tab-${tabKey}`);
-        if (pane) {
-          pane.classList.toggle("active", tabKey === currentActiveTab);
-        }
-      });
-    }
-
-    SmartLengthEngine.requestUpdate();
-  }
-
-  document.querySelectorAll(".nav-tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
-      currentActiveTab = tab.dataset.tab;
-      syncTabsForScreen();
-      triggerHaptic(10);
-    });
-  });
-
-  // Instant 0ms Pointerdown + Auto-repeat on hold
   function bindInstantKeyButton(btn, getKeyFn) {
+    if (!btn) return;
     let repeatTimer = null;
     let repeatInterval = null;
 
@@ -1005,37 +742,120 @@
     btn.addEventListener("pointerleave", stopPress);
   }
 
-  // Remote Buttons ([data-key])
-  document.querySelectorAll("[data-key]").forEach((btn) => {
-    bindInstantKeyButton(btn, () => btn.dataset.key);
+  // Bind all [data-key] buttons including SVG D-Pad wedges
+  document.querySelectorAll("[data-key]").forEach((el) => {
+    bindInstantKeyButton(el, () => el.dataset.key);
   });
 
-  // Power Button
-  bindInstantKeyButton(powerBtn, "POWER");
+  // ----------------------------------------------------
+  // 13. MODALS & POPUPS WIRING
+  // ----------------------------------------------------
+  // Settings Modal (Image 2)
+  if (slidersSettingsBtn && remoteSettingsModal) {
+    slidersSettingsBtn.addEventListener("click", () => {
+      remoteSettingsModal.classList.remove("hidden");
+      triggerHaptic(15);
+    });
+  }
+  if (closeRemoteSettingsBtn && remoteSettingsModal) {
+    closeRemoteSettingsBtn.addEventListener("click", () => {
+      remoteSettingsModal.classList.add("hidden");
+    });
+  }
+  if (tvControlSetupBtn) {
+    tvControlSetupBtn.addEventListener("click", () => {
+      if (remoteSettingsModal) remoteSettingsModal.classList.add("hidden");
+      if (deviceModal) deviceModal.classList.remove("hidden");
+      loadSavedDevices();
+    });
+  }
+  if (moreRemoteSettingsLink) {
+    moreRemoteSettingsLink.addEventListener("click", () => {
+      if (remoteSettingsModal) remoteSettingsModal.classList.add("hidden");
+      if (deviceStatusModal) deviceStatusModal.classList.remove("hidden");
+    });
+  }
 
-  // Text Input handlers
-  sendTextBtn.addEventListener("click", sendText);
-  textInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      sendText();
-      sendKey("ENTER");
-    }
-  });
-  clearTextBtn.addEventListener("click", () => {
-    textInput.value = "";
-    textInput.focus();
-  });
+  // Keyboard Modal
+  if (openKeyboardBtn && keyboardModal) {
+    openKeyboardBtn.addEventListener("click", () => {
+      keyboardModal.classList.remove("hidden");
+      if (textInput) textInput.focus();
+      triggerHaptic(15);
+    });
+  }
+  if (closeKeyboardModal && keyboardModal) {
+    closeKeyboardModal.addEventListener("click", () => {
+      keyboardModal.classList.add("hidden");
+    });
+  }
+  if (sendTextBtn) sendTextBtn.addEventListener("click", sendText);
+  if (textInput) {
+    textInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        sendText();
+      }
+    });
+  }
+  if (clearTextBtn && textInput) {
+    clearTextBtn.addEventListener("click", () => {
+      textInput.value = "";
+      textInput.focus();
+    });
+  }
 
-  // Custom App launch
-  launchCustomBtn.addEventListener("click", () => {
-    const pkg = customPackageInput.value.trim();
-    if (pkg) launchApp(pkg);
-  });
+  // 3-Dots Menu Modal
+  if (dotsMenuBtn && dotsMenuModal) {
+    dotsMenuBtn.addEventListener("click", () => {
+      dotsMenuModal.classList.remove("hidden");
+      triggerHaptic(15);
+    });
+  }
+  if (closeDotsMenuBtn && dotsMenuModal) {
+    closeDotsMenuBtn.addEventListener("click", () => {
+      dotsMenuModal.classList.add("hidden");
+    });
+  }
+  if (dotsConnectBtn) {
+    dotsConnectBtn.addEventListener("click", () => {
+      dotsMenuModal.classList.add("hidden");
+      deviceModal.classList.remove("hidden");
+      loadSavedDevices();
+    });
+  }
+  if (dotsDesktopBtn) {
+    dotsDesktopBtn.addEventListener("click", () => {
+      dotsMenuModal.classList.add("hidden");
+      setDesktopMode(!isDesktopStudio);
+    });
+  }
+  if (dotsQrBtn) {
+    dotsQrBtn.addEventListener("click", () => {
+      dotsMenuModal.classList.add("hidden");
+      openQrModal();
+    });
+  }
+  if (dotsHelpBtn) {
+    dotsHelpBtn.addEventListener("click", () => {
+      dotsMenuModal.classList.add("hidden");
+      helpModal.classList.remove("hidden");
+    });
+  }
+  if (dotsDisconnectBtn) {
+    dotsDisconnectBtn.addEventListener("click", async () => {
+      dotsMenuModal.classList.add("hidden");
+      try {
+        await fetch("/api/disconnect", { method: "POST" });
+      } catch (e) {}
+      handleStatusUpdate({ state: "disconnected" });
+    });
+  }
 
-  // Modals open/close
-  if (deviceAlertsBtn && deviceStatusModal) {
-    deviceAlertsBtn.addEventListener("click", () => {
+  // Device Bar / Status
+  if (deviceBarBtn && deviceStatusModal) {
+    deviceBarBtn.addEventListener("click", () => {
       deviceStatusModal.classList.remove("hidden");
+      triggerHaptic(15);
     });
   }
   if (closeDeviceStatusModal && deviceStatusModal) {
@@ -1067,52 +887,72 @@
       handleStatusUpdate({ state: "disconnected" });
     });
   }
+  if (changeDeviceBtn) {
+    changeDeviceBtn.addEventListener("click", () => {
+      if (deviceStatusModal) deviceStatusModal.classList.add("hidden");
+      deviceModal.classList.remove("hidden");
+      loadSavedDevices();
+    });
+  }
 
-  statusBtn.addEventListener("click", () => {
-    deviceModal.classList.remove("hidden");
-    loadSavedDevices();
-  });
-  closeDeviceModal.addEventListener("click", () => deviceModal.classList.add("hidden"));
-  scanBtn.addEventListener("click", triggerScan);
+  // Device Discovery Modal
+  if (closeDeviceModal && deviceModal) {
+    closeDeviceModal.addEventListener("click", () => deviceModal.classList.add("hidden"));
+  }
+  if (scanBtn) scanBtn.addEventListener("click", triggerScan);
+  if (manualConnectForm) {
+    manualConnectForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const ip = manualIpInput.value.trim();
+      const port = parseInt(manualPortInput.value.trim(), 10) || 5555;
+      if (ip) connectToDevice(ip, port);
+    });
+  }
 
-  manualConnectForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const ip = manualIpInput.value.trim();
-    const port = parseInt(manualPortInput.value.trim(), 10) || 5555;
-    if (ip) connectToDevice(ip, port);
-  });
+  // QR Modal
+  if (closeQrModal && qrModal) {
+    closeQrModal.addEventListener("click", () => qrModal.classList.add("hidden"));
+  }
+  if (copyUrlBtn && qrUrlInput) {
+    copyUrlBtn.addEventListener("click", () => {
+      qrUrlInput.select();
+      navigator.clipboard.writeText(qrUrlInput.value);
+      copyUrlBtn.textContent = "Copied!";
+      setTimeout(() => (copyUrlBtn.textContent = "Copy"), 2000);
+    });
+  }
 
-  changeDeviceBtn.addEventListener("click", () => {
-    if (deviceStatusModal) deviceStatusModal.classList.add("hidden");
-    deviceModal.classList.remove("hidden");
-    loadSavedDevices();
-  });
+  // Help Modal
+  if (closeHelpModal && helpModal) {
+    closeHelpModal.addEventListener("click", () => helpModal.classList.add("hidden"));
+  }
+  if (gotItBtn && helpModal) {
+    gotItBtn.addEventListener("click", () => helpModal.classList.add("hidden"));
+  }
+  if (showGuideBtn) {
+    showGuideBtn.addEventListener("click", () => {
+      if (deviceStatusModal) deviceStatusModal.classList.add("hidden");
+      helpModal.classList.remove("hidden");
+    });
+  }
+  if (authRetryBtn) {
+    authRetryBtn.addEventListener("click", () => {
+      if (connectedDevice?.host) {
+        connectToDevice(connectedDevice.host, connectedDevice.port || 5555);
+      }
+    });
+  }
 
-  mobileQrBtn.addEventListener("click", openQrModal);
-  closeQrModal.addEventListener("click", () => qrModal.classList.add("hidden"));
-  copyUrlBtn.addEventListener("click", () => {
-    qrUrlInput.select();
-    navigator.clipboard.writeText(qrUrlInput.value);
-    copyUrlBtn.textContent = "Copied!";
-    setTimeout(() => (copyUrlBtn.textContent = "Copy"), 2000);
-  });
-
-  helpBtn.addEventListener("click", () => helpModal.classList.remove("hidden"));
-  showGuideBtn.addEventListener("click", () => {
-    if (deviceStatusModal) deviceStatusModal.classList.add("hidden");
-    helpModal.classList.remove("hidden");
-  });
-  closeHelpModal.addEventListener("click", () => helpModal.classList.add("hidden"));
-  gotItBtn.addEventListener("click", () => helpModal.classList.add("hidden"));
-
-  authRetryBtn.addEventListener("click", () => {
-    if (connectedDevice?.host) {
-      connectToDevice(connectedDevice.host, connectedDevice.port || 5555);
-    }
-  });
+  // Custom package launch
+  if (launchCustomBtn && customPackageInput) {
+    launchCustomBtn.addEventListener("click", () => {
+      const pkg = customPackageInput.value.trim();
+      if (pkg) launchApp(pkg);
+    });
+  }
 
   // Close modals on background tap
-  [deviceModal, qrModal, helpModal, deviceStatusModal].forEach((modal) => {
+  [remoteSettingsModal, keyboardModal, dotsMenuModal, deviceModal, qrModal, helpModal, deviceStatusModal].forEach((modal) => {
     if (!modal) return;
     modal.addEventListener("click", (e) => {
       if (e.target === modal) modal.classList.add("hidden");
@@ -1120,7 +960,133 @@
   });
 
   // ----------------------------------------------------
-  // 4. PHYSICAL KEYBOARD CONTROLS & LIVE VISUAL GLOW
+  // 14. DEVICE DISCOVERY & SAVED LIST
+  // ----------------------------------------------------
+  async function triggerScan() {
+    if (!scanBtn || !scanBtnText || !discoveredList) return;
+    scanBtn.classList.add("scanning");
+    scanBtnText.textContent = "Scanning...";
+    discoveredList.innerHTML = `<div class="empty-state">Searching for Fire TVs on local Wi-Fi...</div>`;
+
+    try {
+      const res = await fetch("/api/discover");
+      const data = await res.json();
+      renderDiscoveredDevices(data.devices);
+    } catch (e) {
+      discoveredList.innerHTML = `<div class="empty-state">Scan failed: ${e.message}</div>`;
+    } finally {
+      scanBtn.classList.remove("scanning");
+      scanBtnText.textContent = "Scan Network";
+    }
+  }
+
+  function renderDiscoveredDevices(devices) {
+    if (!discoveredList) return;
+    if (!devices || devices.length === 0) {
+      discoveredList.innerHTML = `
+        <div class="empty-state">
+          No Fire TVs found.<br>
+          Ensure your Fire TV is on the same Wi-Fi and has <strong>ADB Debugging ON</strong>.
+        </div>
+      `;
+      return;
+    }
+
+    discoveredList.innerHTML = "";
+    devices.forEach((dev) => {
+      const item = document.createElement("div");
+      item.className = "device-item";
+      item.innerHTML = `
+        <div class="device-meta">
+          <span class="device-item-name">${dev.name || "Amazon Fire TV"}</span>
+          <span class="device-item-ip">${dev.ip} ${dev.adb_available ? "• ADB Ready" : ""}</span>
+        </div>
+        <button class="btn-secondary">Connect</button>
+      `;
+      item.querySelector("button").addEventListener("click", () => {
+        connectToDevice(dev.ip, 5555, dev.name);
+      });
+      discoveredList.appendChild(item);
+    });
+  }
+
+  async function loadSavedDevices() {
+    if (!savedList) return;
+    try {
+      const res = await fetch("/api/saved-devices");
+      const devices = await res.json();
+      renderSavedDevices(devices);
+    } catch (e) {}
+  }
+
+  function renderSavedDevices(devices) {
+    if (!savedList) return;
+    if (!devices || devices.length === 0) {
+      savedList.innerHTML = `<div class="empty-state">No saved devices yet.</div>`;
+      return;
+    }
+
+    savedList.innerHTML = "";
+    devices.forEach((dev) => {
+      const item = document.createElement("div");
+      item.className = "device-item";
+      item.innerHTML = `
+        <div class="device-meta">
+          <span class="device-item-name">${dev.name || "Fire TV"}</span>
+          <span class="device-item-ip">${dev.host}:${dev.port || 5555}</span>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn-secondary btn-connect-saved">Connect</button>
+          <button class="btn-close btn-del-saved" title="Delete">✕</button>
+        </div>
+      `;
+      item.querySelector(".btn-connect-saved").addEventListener("click", () => {
+        connectToDevice(dev.host, dev.port || 5555, dev.name);
+      });
+      item.querySelector(".btn-del-saved").addEventListener("click", async (e) => {
+        e.stopPropagation();
+        await fetch(`/api/saved-devices/${encodeURIComponent(dev.host)}`, { method: "DELETE" });
+        loadSavedDevices();
+      });
+      savedList.appendChild(item);
+    });
+  }
+
+  async function connectToDevice(host, port = 5555, name = "") {
+    triggerHaptic(20);
+    if (deviceModal) deviceModal.classList.add("hidden");
+    handleStatusUpdate({ state: "connecting", host, port });
+
+    try {
+      const res = await fetch("/api/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ host, port, name, save: true })
+      });
+      const data = await res.json();
+      handleStatusUpdate(data);
+      loadSavedDevices();
+    } catch (e) {
+      handleStatusUpdate({ state: "error", host, port, last_error: e.message });
+    }
+  }
+
+  async function openQrModal() {
+    if (!qrModal || !qrContainer || !qrUrlInput) return;
+    try {
+      const res = await fetch("/api/server-info");
+      const info = await res.json();
+      const qrRes = await fetch("/api/qr");
+      const svgText = await qrRes.text();
+
+      qrContainer.innerHTML = svgText;
+      qrUrlInput.value = info.mobile_url;
+      qrModal.classList.remove("hidden");
+    } catch (e) {}
+  }
+
+  // ----------------------------------------------------
+  // 15. PHYSICAL KEYBOARD CONTROLS
   // ----------------------------------------------------
   const KEY_MAP = {
     ArrowUp: "UP",
@@ -1142,30 +1108,11 @@
   };
 
   window.addEventListener("keydown", (e) => {
-    // Ignore keyboard shortcuts if user is typing in a text field
-    if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) {
-      return;
-    }
-
+    if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
     const commandKey = KEY_MAP[e.key];
     if (commandKey) {
       e.preventDefault();
       sendKey(commandKey);
-
-      // Light up matching on-screen hotkey chip
-      const matchingChip = document.querySelector(`.hotkey-chip[data-hotkey="${e.code}"]`) ||
-                           document.querySelector(`.hotkey-chip[data-hotkey="${e.key}"]`);
-      if (matchingChip) {
-        matchingChip.classList.add("key-pressed");
-      }
-    }
-  });
-
-  window.addEventListener("keyup", (e) => {
-    const matchingChip = document.querySelector(`.hotkey-chip[data-hotkey="${e.code}"]`) ||
-                         document.querySelector(`.hotkey-chip[data-hotkey="${e.key}"]`);
-    if (matchingChip) {
-      matchingChip.classList.remove("key-pressed");
     }
   });
 
@@ -1174,16 +1121,17 @@
       const res = await fetch("/api/apps");
       const apps = await res.json();
       if (apps && apps.length > 0) {
-        renderApps(apps);
+        renderDrawerApps(apps);
+        renderStudioApps(apps);
       }
-    } catch (e) {
-      console.error("Error loading apps:", e);
-    }
+    } catch (e) {}
   }
 
   // ----------------------------------------------------
   // Initialization
   // ----------------------------------------------------
+  setControllerMode(currentControllerMode);
+  setDrawerTab(currentDrawerTab);
   SmartLengthEngine.init();
   TvMonitor.init();
   setDesktopMode(isDesktopStudio);
@@ -1191,5 +1139,4 @@
   fetchStatus();
   loadApps();
   startStatusPolling();
-  syncTabsForScreen();
 })();
