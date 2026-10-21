@@ -10,6 +10,9 @@
   // DOM Elements
   const statusBtn = document.getElementById("statusBtn");
   const statusText = document.getElementById("statusText");
+  const deviceAlertsBtn = document.getElementById("deviceAlertsBtn");
+  const devicePillText = document.getElementById("devicePillText");
+  const deviceAlertBadge = document.getElementById("deviceAlertBadge");
   const desktopModeBtn = document.getElementById("desktopModeBtn");
   const powerBtn = document.getElementById("powerBtn");
   const mobileQrBtn = document.getElementById("mobileQrBtn");
@@ -17,6 +20,10 @@
   const deviceBar = document.getElementById("deviceBar");
   const deviceModel = document.getElementById("deviceModel");
   const deviceApp = document.getElementById("deviceApp");
+  const noDeviceCard = document.getElementById("noDeviceCard");
+  const connectDeviceBtn = document.getElementById("connectDeviceBtn");
+  const disconnectBtn = document.getElementById("disconnectBtn");
+  const scanFromStatusBtn = document.getElementById("scanFromStatusBtn");
   const changeDeviceBtn = document.getElementById("changeDeviceBtn");
   const authAlert = document.getElementById("authAlert");
   const authRetryBtn = document.getElementById("authRetryBtn");
@@ -27,6 +34,8 @@
   let adbWatcherInterval = null;
 
   // Modals
+  const deviceStatusModal = document.getElementById("deviceStatusModal");
+  const closeDeviceStatusModal = document.getElementById("closeDeviceStatusModal");
   const deviceModal = document.getElementById("deviceModal");
   const closeDeviceModal = document.getElementById("closeDeviceModal");
   const scanBtn = document.getElementById("scanBtn");
@@ -124,72 +133,127 @@
     update() {
       const vv = window.visualViewport;
       const viewportHeight = vv ? Math.round(vv.height) : window.innerHeight;
-      const viewportWidth = vv ? Math.round(vv.width) : window.innerWidth;
+      const viewportWidth  = vv ? Math.round(vv.width)  : window.innerWidth;
 
-      // Set actual measured viewport length and width
+      // ── 1. Persist actual viewport dimensions ──────────────────────────────
       document.documentElement.style.setProperty("--app-actual-height", `${viewportHeight}px`);
-      document.documentElement.style.setProperty("--app-actual-width", `${viewportWidth}px`);
+      document.documentElement.style.setProperty("--app-actual-width",  `${viewportWidth}px`);
 
-      // Measure layout elements
-      const headerEl = document.querySelector(".header");
-      const navEl = document.querySelector(".nav-tabs");
-      const devBar = document.getElementById("deviceBar");
-      const authAlertEl = document.getElementById("authAlert");
-      const adbAlertEl = document.getElementById("adbAlert");
-
-      const headerH = headerEl ? headerEl.offsetHeight : 52;
-      const navH = (navEl && navEl.offsetParent !== null) ? navEl.offsetHeight : 0;
-      const devBarH = (devBar && !devBar.classList.contains("hidden")) ? devBar.offsetHeight : 0;
-      const alertH = (authAlertEl && !authAlertEl.classList.contains("hidden")) ? authAlertEl.offsetHeight :
-                     ((adbAlertEl && !adbAlertEl.classList.contains("hidden")) ? adbAlertEl.offsetHeight : 0);
-
-      const overhead = headerH + navH + devBarH + alertH + 24;
-      const availableNetH = Math.max(260, viewportHeight - overhead);
+      // ── 2. Classify the screen so layout decisions are centralised here ────
+      //
+      //  "phone"   → narrow portrait phones   (width < 480)
+      //  "phablet" → large phones / small tabs (480–767)
+      //  "tablet"  → tablets / small laptops   (768–1199)
+      //  "desktop" → widescreen / large display (≥1200)
+      //
       const isLandscapePhone = viewportWidth > viewportHeight && viewportHeight <= 540;
+      // For a landscape phone use the SHORT dimension to classify
+      const classifyWidth = isLandscapePhone ? viewportHeight : viewportWidth;
+      let screenClass;
+      if      (classifyWidth < 480)  screenClass = "phone";
+      else if (classifyWidth < 768)  screenClass = "phablet";
+      else if (classifyWidth < 1200) screenClass = "tablet";
+      else                           screenClass = "desktop";
 
+      // Propagate class to <html> so CSS can also react
+      document.documentElement.dataset.screen = screenClass;
+
+      // ── 3. Compute container max-width and horizontal padding ──────────────
+      let maxWidth, padX, padTop, padBottom;
+      const safeTop    = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--sait") || "0") || 0;
+      const safeBottom = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--saib") || "0") || 0;
+
+      if (screenClass === "phone" || isLandscapePhone) {
+        // Fill the full screen on phones (portrait or landscape) — no wasted margins
+        maxWidth  = viewportWidth;
+        padX      = Math.max(10, Math.round(Math.min(viewportWidth, viewportHeight) * 0.04));
+        padTop    = Math.max(8, safeTop);
+        padBottom = Math.max(8, safeBottom);
+      } else if (screenClass === "phablet") {
+        // Fill the width but add modest breathing room
+        maxWidth  = viewportWidth;
+        padX      = Math.max(14, Math.round(viewportWidth * 0.045));
+        padTop    = Math.max(10, safeTop);
+        padBottom = Math.max(10, safeBottom);
+      } else if (screenClass === "tablet") {
+        // Centre at a comfortable reading width, no wider than the screen
+        maxWidth  = Math.min(viewportWidth, 560);
+        padX      = Math.max(18, Math.round(viewportWidth * 0.05));
+        padTop    = Math.max(12, safeTop);
+        padBottom = Math.max(12, safeBottom);
+      } else {
+        // Desktop — handled by desktop-studio CSS, but cap the compact remote
+        maxWidth  = document.body.classList.contains("desktop-studio-active")
+                      ? Math.min(1520, Math.round(viewportWidth * 0.96))
+                      : Math.min(480, Math.round(viewportWidth * 0.38));
+        padX      = 24;
+        padTop    = 14;
+        padBottom = 14;
+      }
+
+      document.documentElement.style.setProperty("--app-max-width",    `${maxWidth}px`);
+      document.documentElement.style.setProperty("--app-pad-x",        `${padX}px`);
+      document.documentElement.style.setProperty("--app-pad-top",      `${padTop}px`);
+      document.documentElement.style.setProperty("--app-pad-bottom",   `${padBottom}px`);
+
+      // ── 4. Measure remaining vertical space for controls ──────────────────
+      const headerEl    = document.querySelector(".header");
+      const navEl       = document.querySelector(".nav-tabs");
+      const hintsEl     = document.querySelector(".desktop-hints");
+      const remotePane  = document.getElementById("tab-remote");
+      const isDesktop   = document.body.classList.contains("desktop-studio-active");
+
+      const headerH = headerEl ? headerEl.offsetHeight : 44;
+      const navH    = (navEl && navEl.offsetParent !== null) ? navEl.offsetHeight : 0;
+      const hintsH  = (hintsEl && hintsEl.offsetParent !== null) ? hintsEl.offsetHeight : 0;
+
+      const overhead       = headerH + navH + hintsH + padTop + padBottom;
+      const availableNetH  = Math.max(260, viewportHeight - overhead);
+
+      // ── 5. Compute proportional control sizes ─────────────────────────────
       let dpadSize, btnSize, playSize, gapSize;
 
-      if (isLandscapePhone) {
-        // Landscape Phone: Short vertical length, wide horizontal space
-        dpadSize = Math.max(130, Math.min(185, Math.round(viewportHeight * 0.58)));
-        btnSize = Math.max(38, Math.min(46, Math.round(viewportHeight * 0.12)));
-        playSize = Math.max(44, Math.min(52, Math.round(viewportHeight * 0.13)));
-        gapSize = 6;
+      if (isDesktop && remotePane && remotePane.clientHeight > 100) {
+        // Desktop Studio Mode: Base calculations directly on the actual Column 1 remote container height
+        const remoteH = remotePane.clientHeight - 24;
+        dpadSize = Math.max(120, Math.min(235, Math.round(remoteH * 0.38)));
+        btnSize  = Math.max(34,  Math.min(48,  Math.round(remoteH * 0.088)));
+        playSize = Math.max(40,  Math.min(56,  Math.round(remoteH * 0.105)));
+        gapSize  = Math.max(4,   Math.min(12,  Math.round(remoteH * 0.018)));
+      } else if (isLandscapePhone) {
+        dpadSize = Math.max(120, Math.min(180, Math.round(viewportHeight * 0.55)));
+        btnSize  = Math.max(36,  Math.min(44,  Math.round(viewportHeight * 0.11)));
+        playSize = Math.max(42,  Math.min(50,  Math.round(viewportHeight * 0.12)));
+        gapSize  = 5;
       } else if (availableNetH < 440) {
-        // Ultra-compact length (e.g. small Android, split screen, or keyboard up)
-        dpadSize = Math.max(140, Math.min(180, Math.round(availableNetH * 0.40), Math.round(viewportWidth * 0.52)));
-        btnSize = Math.max(38, Math.min(44, Math.round(availableNetH * 0.09)));
-        playSize = Math.max(46, Math.min(52, Math.round(availableNetH * 0.105)));
-        gapSize = 5;
+        dpadSize = Math.max(130, Math.min(170, Math.round(availableNetH * 0.38), Math.round(viewportWidth * 0.50)));
+        btnSize  = Math.max(36,  Math.min(42,  Math.round(availableNetH * 0.085)));
+        playSize = Math.max(44,  Math.min(50,  Math.round(availableNetH * 0.10)));
+        gapSize  = 4;
       } else if (availableNetH < 620) {
-        // Standard phone length (iPhone SE / iPhone 12 / 13)
-        dpadSize = Math.max(170, Math.min(215, Math.round(availableNetH * 0.38), Math.round(viewportWidth * 0.58)));
-        btnSize = Math.max(44, Math.min(52, Math.round(availableNetH * 0.095)));
-        playSize = Math.max(52, Math.min(60, Math.round(availableNetH * 0.11)));
-        gapSize = Math.min(14, Math.max(6, Math.round(availableNetH * 0.02)));
+        dpadSize = Math.max(160, Math.min(210, Math.round(availableNetH * 0.36), Math.round(viewportWidth * 0.54)));
+        btnSize  = Math.max(42,  Math.min(50,  Math.round(availableNetH * 0.09)));
+        playSize = Math.max(50,  Math.min(58,  Math.round(availableNetH * 0.105)));
+        gapSize  = Math.min(12, Math.max(6, Math.round(availableNetH * 0.018)));
       } else {
-        // Tall phone, tablet, or desktop
-        dpadSize = Math.max(190, Math.min(250, Math.round(availableNetH * 0.36), Math.round(viewportWidth * 0.60)));
-        btnSize = 56;
-        playSize = 64;
-        gapSize = Math.min(18, Math.max(8, Math.round(availableNetH * 0.025)));
+        dpadSize = Math.max(180, Math.min(240, Math.round(availableNetH * 0.35), Math.round(maxWidth * 0.54)));
+        btnSize  = Math.min(54, Math.max(46, Math.round(availableNetH * 0.075)));
+        playSize = Math.min(62, Math.max(54, Math.round(availableNetH * 0.088)));
+        gapSize  = Math.min(16, Math.max(8, Math.round(availableNetH * 0.02)));
       }
 
       const centerSize = Math.round(dpadSize * 0.38);
-      const tvHeight = Math.min(Math.round(availableNetH * 0.72), 480);
+      const tvHeight   = Math.min(Math.round(availableNetH * 0.72), 520);
 
-      // Inject proportional CSS variables
-      document.documentElement.style.setProperty("--smart-dpad-size", `${dpadSize}px`);
-      document.documentElement.style.setProperty("--smart-dpad-center", `${centerSize}px`);
-      document.documentElement.style.setProperty("--smart-btn-size", `${btnSize}px`);
-      document.documentElement.style.setProperty("--smart-play-btn-size", `${playSize}px`);
-      document.documentElement.style.setProperty("--smart-gap", `${gapSize}px`);
-      document.documentElement.style.setProperty("--smart-tv-height", `${tvHeight}px`);
+      document.documentElement.style.setProperty("--smart-dpad-size",      `${dpadSize}px`);
+      document.documentElement.style.setProperty("--smart-dpad-center",    `${centerSize}px`);
+      document.documentElement.style.setProperty("--smart-btn-size",       `${btnSize}px`);
+      document.documentElement.style.setProperty("--smart-play-btn-size",  `${playSize}px`);
+      document.documentElement.style.setProperty("--smart-gap",            `${gapSize}px`);
+      document.documentElement.style.setProperty("--smart-tv-height",      `${tvHeight}px`);
 
-      // Update TV Monitor height if available
       if (tvScreenFrame) {
-        const targetTvHeight = Math.min(Math.round(availableNetH * 0.62), 400);
-        tvScreenFrame.style.maxHeight = `${targetTvHeight}px`;
+        tvScreenFrame.style.maxHeight = `${Math.min(Math.round(availableNetH * 0.62), 450)}px`;
       }
     },
 
@@ -197,15 +261,20 @@
     ensureZeroScroll() {
       const remoteDeck = document.querySelector(".remote-deck");
       const remotePane = document.getElementById("tab-remote");
-      if (!remoteDeck || !remotePane || !remotePane.classList.contains("active")) return;
+      if (!remoteDeck || !remotePane) return;
+
+      const isDesktop = document.body.classList.contains("desktop-studio-active");
+      const isVisible = isDesktop || remotePane.classList.contains("active");
+      if (!isVisible) return;
 
       remoteDeck.style.transform = "";
       const availableHeight = remotePane.clientHeight;
       const scrollHeight = remoteDeck.scrollHeight;
 
-      if (availableHeight > 50 && scrollHeight > availableHeight + 2) {
-        const scaleFactor = Math.max(0.70, (availableHeight - 4) / scrollHeight);
+      if (availableHeight > 60 && scrollHeight > availableHeight) {
+        const scaleFactor = Math.max(0.60, (availableHeight - 6) / scrollHeight);
         remoteDeck.style.transform = `scale(${scaleFactor.toFixed(3)})`;
+        remoteDeck.style.transformOrigin = "center center";
       }
     }
   };
@@ -449,10 +518,16 @@
     connectedDevice = data;
 
     statusBtn.className = "status-pill";
+    if (deviceAlertsBtn) deviceAlertsBtn.className = "device-alerts-pill";
+    if (deviceAlertBadge) deviceAlertBadge.classList.add("hidden");
+
     if (data.state === "connected") {
       statusBtn.classList.add("connected");
-      statusText.textContent = data.info?.model || data.host || "Connected";
-      deviceBar.classList.remove("hidden");
+      statusText.textContent = "Connected";
+      if (devicePillText) devicePillText.textContent = data.info?.model || data.host || "Fire TV";
+
+      if (deviceBar) deviceBar.classList.remove("hidden");
+      if (noDeviceCard) noDeviceCard.classList.add("hidden");
       deviceModel.textContent = data.info?.model || "Amazon Fire TV";
       deviceApp.textContent = `App: ${data.info?.current_app || "Home"}`;
       authAlert.classList.add("hidden");
@@ -463,7 +538,16 @@
     } else if (data.state === "authorizing" || data.state === "unauthorized") {
       statusBtn.classList.add("authorizing");
       statusText.textContent = "Authorize on TV...";
-      deviceBar.classList.add("hidden");
+      if (devicePillText) devicePillText.textContent = "Auth Needed";
+      if (deviceAlertsBtn) deviceAlertsBtn.classList.add("has-alert");
+      if (deviceAlertBadge) {
+        deviceAlertBadge.textContent = "!";
+        deviceAlertBadge.className = "alert-badge amber-badge";
+        deviceAlertBadge.classList.remove("hidden");
+      }
+
+      if (deviceBar) deviceBar.classList.add("hidden");
+      if (noDeviceCard) noDeviceCard.classList.remove("hidden");
       authAlert.classList.remove("hidden");
       adbAlert.classList.add("hidden");
       stopAdbWatcher();
@@ -471,20 +555,32 @@
     } else if (data.state === "connecting") {
       statusBtn.classList.add("authorizing");
       statusText.textContent = "Connecting...";
-      deviceBar.classList.add("hidden");
+      if (devicePillText) devicePillText.textContent = "Connecting...";
+      if (deviceBar) deviceBar.classList.add("hidden");
+      if (noDeviceCard) noDeviceCard.classList.remove("hidden");
       authAlert.classList.add("hidden");
       adbAlert.classList.add("hidden");
     } else {
       statusBtn.classList.add("disconnected");
       statusText.textContent = data.state === "error" ? "Connection Failed" : "Disconnected";
-      deviceBar.classList.add("hidden");
+      if (deviceBar) deviceBar.classList.add("hidden");
+      if (noDeviceCard) noDeviceCard.classList.remove("hidden");
       authAlert.classList.add("hidden");
 
       if (data.state === "error" && data.last_error && (data.last_error.includes("ADB Debugging") || data.last_error.includes("refused"))) {
+        if (devicePillText) devicePillText.textContent = "ADB Off";
+        if (deviceAlertsBtn) deviceAlertsBtn.classList.add("has-error");
+        if (deviceAlertBadge) {
+          deviceAlertBadge.textContent = "!";
+          deviceAlertBadge.className = "alert-badge";
+          deviceAlertBadge.classList.remove("hidden");
+        }
+
         adbAlert.classList.remove("hidden");
         adbAlertTitle.textContent = `ADB Debugging is OFF on ${data.host || "Fire TV"}`;
         startAdbWatcher(data.host);
       } else {
+        if (devicePillText) devicePillText.textContent = "Fire TV";
         adbAlert.classList.add("hidden");
         stopAdbWatcher();
       }
@@ -932,6 +1028,41 @@
   });
 
   // Modals open/close
+  if (deviceAlertsBtn && deviceStatusModal) {
+    deviceAlertsBtn.addEventListener("click", () => {
+      deviceStatusModal.classList.remove("hidden");
+    });
+  }
+  if (closeDeviceStatusModal && deviceStatusModal) {
+    closeDeviceStatusModal.addEventListener("click", () => {
+      deviceStatusModal.classList.add("hidden");
+    });
+  }
+  if (connectDeviceBtn) {
+    connectDeviceBtn.addEventListener("click", () => {
+      if (deviceStatusModal) deviceStatusModal.classList.add("hidden");
+      deviceModal.classList.remove("hidden");
+      loadSavedDevices();
+    });
+  }
+  if (scanFromStatusBtn) {
+    scanFromStatusBtn.addEventListener("click", () => {
+      if (deviceStatusModal) deviceStatusModal.classList.add("hidden");
+      deviceModal.classList.remove("hidden");
+      loadSavedDevices();
+      triggerScan();
+    });
+  }
+  if (disconnectBtn) {
+    disconnectBtn.addEventListener("click", async () => {
+      if (deviceStatusModal) deviceStatusModal.classList.add("hidden");
+      try {
+        await fetch("/api/disconnect", { method: "POST" });
+      } catch (e) {}
+      handleStatusUpdate({ state: "disconnected" });
+    });
+  }
+
   statusBtn.addEventListener("click", () => {
     deviceModal.classList.remove("hidden");
     loadSavedDevices();
@@ -947,6 +1078,7 @@
   });
 
   changeDeviceBtn.addEventListener("click", () => {
+    if (deviceStatusModal) deviceStatusModal.classList.add("hidden");
     deviceModal.classList.remove("hidden");
     loadSavedDevices();
   });
@@ -961,7 +1093,10 @@
   });
 
   helpBtn.addEventListener("click", () => helpModal.classList.remove("hidden"));
-  showGuideBtn.addEventListener("click", () => helpModal.classList.remove("hidden"));
+  showGuideBtn.addEventListener("click", () => {
+    if (deviceStatusModal) deviceStatusModal.classList.add("hidden");
+    helpModal.classList.remove("hidden");
+  });
   closeHelpModal.addEventListener("click", () => helpModal.classList.add("hidden"));
   gotItBtn.addEventListener("click", () => helpModal.classList.add("hidden"));
 
@@ -972,7 +1107,8 @@
   });
 
   // Close modals on background tap
-  [deviceModal, qrModal, helpModal].forEach((modal) => {
+  [deviceModal, qrModal, helpModal, deviceStatusModal].forEach((modal) => {
+    if (!modal) return;
     modal.addEventListener("click", (e) => {
       if (e.target === modal) modal.classList.add("hidden");
     });

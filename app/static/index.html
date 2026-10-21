@@ -32,6 +32,13 @@
       </div>
 
       <div class="header-actions">
+        <!-- Condensed Device & Alerts Trigger Button -->
+        <button id="deviceAlertsBtn" class="device-alerts-pill" title="Fire TV Device & Status" aria-label="Device & Alerts">
+          <span class="device-pill-icon">📺</span>
+          <span id="devicePillText" class="device-pill-text">Fire TV</span>
+          <span id="deviceAlertBadge" class="alert-badge hidden">!</span>
+        </button>
+
         <button id="statusBtn" class="status-pill disconnected" title="Connection Settings">
           <span class="status-dot"></span>
           <span id="statusText">Disconnected</span>
@@ -68,39 +75,6 @@
         </button>
       </div>
     </header>
-
-    <!-- TV Info / Focused App Bar -->
-    <div id="deviceBar" class="device-bar hidden">
-      <div class="device-info-left">
-        <span id="deviceModel" class="device-model">Amazon Fire TV</span>
-        <span id="deviceApp" class="device-app">Home</span>
-      </div>
-      <button id="changeDeviceBtn" class="btn-text">Switch</button>
-    </div>
-
-    <!-- Authorization Required Alert Banner -->
-    <div id="authAlert" class="auth-alert hidden">
-      <div class="alert-icon">⚠️</div>
-      <div class="alert-body">
-        <strong>Fire TV Authorization Needed</strong>
-        <p>Look at your TV screen! Select <em>"Always allow from this computer"</em> and press <strong>OK</strong> with your physical remote.</p>
-      </div>
-      <button id="authRetryBtn" class="btn-retry">I Allowed It</button>
-    </div>
-
-    <!-- ADB Disabled Alert Banner with Live Watcher -->
-    <div id="adbAlert" class="auth-alert hidden" style="border-color: rgba(255, 87, 34, 0.4); background: rgba(255, 87, 34, 0.12); color: #ffccbc;">
-      <div class="alert-icon">⚡</div>
-      <div class="alert-body">
-        <strong id="adbAlertTitle" style="color: #ffab91;">ADB Debugging is OFF on your Fire TV</strong>
-        <p id="adbAlertDesc" style="color: #ffe0b2;">To connect, go to <strong>Settings ⚙️ &rarr; My Fire TV &rarr; Developer Options &rarr; ADB Debugging &rarr; ON</strong>.</p>
-        <div id="adbLivePoll" style="font-size:0.75rem; color:#ffb74d; margin-top:6px; display:flex; align-items:center; gap:6px;">
-          <span class="status-dot" style="background:#ff9800; animation:pulse 1s infinite alternate;"></span>
-          <span id="adbPollStatus">Watching in real-time... turn ON the toggle on your TV</span>
-        </div>
-      </div>
-      <button id="showGuideBtn" class="btn-retry" style="background:#ff5722; color:#fff;">Show Steps</button>
-    </div>
 
     <!-- Navigation Tabs -->
     <nav class="nav-tabs">
@@ -405,6 +379,74 @@
     <footer class="desktop-hints">
       <span>⌨️ Shortcuts: Arrow keys (D-pad), Enter (OK), Esc/Backspace (Back), H (Home), M (Menu), Space (Play/Pause)</span>
     </footer>
+  </div>
+
+  <!-- MODAL: Device Status & Alerts Popup (Condensed View) -->
+  <div id="deviceStatusModal" class="modal-overlay hidden">
+    <div class="modal-card modal-device-status">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <span class="modal-header-icon">📺</span>
+          <h3>Fire TV Device & Alerts</h3>
+        </div>
+        <button id="closeDeviceStatusModal" class="btn-close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- 1. Device Info Card -->
+        <div id="deviceBar" class="device-status-card">
+          <div class="device-info-left">
+            <span class="device-status-badge" id="deviceStatusBadge">Active Device</span>
+            <span id="deviceModel" class="device-model">Amazon Fire TV</span>
+            <span id="deviceApp" class="device-app">App: Home</span>
+          </div>
+          <div class="device-card-actions">
+            <button id="changeDeviceBtn" class="btn-secondary btn-sm">Switch TV</button>
+            <button id="disconnectBtn" class="btn-text-danger btn-sm">Disconnect</button>
+          </div>
+        </div>
+
+        <!-- 2. No Active Device Notice (when disconnected) -->
+        <div id="noDeviceCard" class="device-status-card empty-device-card hidden">
+          <div class="device-info-left">
+            <span class="device-model">No TV Connected</span>
+            <span class="device-app" style="color:var(--text-muted)">Connect via IP or scan your local Wi-Fi</span>
+          </div>
+          <button id="connectDeviceBtn" class="btn-primary-action btn-sm" style="width:auto; padding:8px 14px;">Connect TV</button>
+        </div>
+
+        <!-- 3. Authorization Required Alert Banner -->
+        <div id="authAlert" class="modal-alert-box auth-alert-theme hidden">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-body">
+            <strong>Fire TV Authorization Needed</strong>
+            <p>Look at your TV screen! Select <em>"Always allow from this computer"</em> and press <strong>OK</strong> with your physical remote.</p>
+          </div>
+          <button id="authRetryBtn" class="btn-retry">I Allowed It</button>
+        </div>
+
+        <!-- 4. ADB Disabled Alert Banner with Live Watcher -->
+        <div id="adbAlert" class="modal-alert-box adb-alert-theme hidden">
+          <div class="alert-icon">⚡</div>
+          <div class="alert-body">
+            <strong id="adbAlertTitle">ADB Debugging is OFF on your Fire TV</strong>
+            <p id="adbAlertDesc">To connect, go to <strong>Settings ⚙️ &rarr; My Fire TV &rarr; Developer Options &rarr; ADB Debugging &rarr; ON</strong>.</p>
+            <div id="adbLivePoll" class="adb-live-poll">
+              <span class="status-dot pulse-amber"></span>
+              <span id="adbPollStatus">Watching in real-time... turn ON the toggle on your TV</span>
+            </div>
+          </div>
+          <button id="showGuideBtn" class="btn-retry btn-orange">Show Steps</button>
+        </div>
+
+        <!-- 5. Quick Scanner Shortcut Button -->
+        <div class="status-modal-footer">
+          <button id="scanFromStatusBtn" class="btn-secondary" style="width: 100%;">
+            <span>📡 Open Network Scanner & Saved TVs</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- MODAL: Device Manager & Network Scanner -->
