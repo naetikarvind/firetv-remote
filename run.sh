@@ -11,6 +11,14 @@ if [ ! -d ".venv" ]; then
     .venv/bin/pip install -r requirements.txt
 fi
 
+# Clean up any lingering process on port 8000
+OLD_PID=$(lsof -ti :8000 2>/dev/null || true)
+if [ -n "$OLD_PID" ]; then
+    echo "⚡ Port 8000 is occupied by process(es) $OLD_PID. Reclaiming port..."
+    kill -9 $OLD_PID 2>/dev/null || true
+    sleep 0.5
+fi
+
 echo "=========================================================="
 echo "           🔥 Fire TV Remote Pro Server                   "
 echo "=========================================================="
