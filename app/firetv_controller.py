@@ -183,11 +183,20 @@ class FireTVController:
             self.last_error = ""
 
             loop = asyncio.get_running_loop()
+            auth_prompt_shown = False
+
+            def _on_auth_callback(io_mgr):
+                nonlocal auth_prompt_shown
+                auth_prompt_shown = True
 
             def _do_connect():
                 dev = AdbDeviceTcp(host, port, default_transport_timeout_s=timeout)
-                # auth_timeout_s=0.5: if unauthorized, raises DeviceAuthError quickly
-                dev.connect(rsa_keys=[self.signer], transport_timeout_s=timeout, auth_timeout_s=0.5)
+                dev.connect(
+                    rsa_keys=[self.signer],
+                    transport_timeout_s=timeout,
+                    auth_timeout_s=2.0,
+                    auth_callback=_on_auth_callback
+                )
                 return dev
 
             try:
@@ -202,15 +211,20 @@ class FireTVController:
                 self.last_error = "Please check your Fire TV screen and select 'Always allow from this computer', then tap OK on your remote."
                 logger.warning(f"Device {host}:{port} is unauthorized. Prompt displayed on TV.")
             except (ConnectionRefusedError, socket.timeout, TcpTimeoutException, OSError) as e:
-                self.state = "error"
-                if isinstance(e, ConnectionRefusedError):
-                    self.last_error = (
-                        f"Connection refused at {host}:{port}. ADB Debugging might be turned off.\n"
-                        "On your Fire TV, go to: Settings -> My Fire TV -> Developer Options -> Turn ON 'ADB Debugging'."
-                    )
+                if auth_prompt_shown:
+                    self.state = "unauthorized"
+                    self.last_error = "Please check your Fire TV screen and select 'Always allow from this computer', then tap OK on your remote."
+                    logger.warning(f"Device {host}:{port} prompt displayed on TV screen, waiting for user confirmation.")
                 else:
-                    self.last_error = f"Could not reach {host}:{port}. Verify the Fire TV is powered on and connected to the same Wi-Fi."
-                logger.error(f"Failed to connect to {host}:{port}: {e}")
+                    self.state = "error"
+                    if isinstance(e, ConnectionRefusedError):
+                        self.last_error = (
+                            f"Connection refused at {host}:{port}. ADB Debugging might be turned off.\n"
+                            "On your Fire TV, go to: Settings -> My Fire TV -> Developer Options -> Turn ON 'ADB Debugging'."
+                        )
+                    else:
+                        self.last_error = f"Could not reach {host}:{port}. Verify the Fire TV is powered on and connected to the same Wi-Fi."
+                    logger.error(f"Failed to connect to {host}:{port}: {e}")
             except Exception as e:
                 self.state = "error"
                 self.last_error = str(e)
