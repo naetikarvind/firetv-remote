@@ -9,6 +9,12 @@ if [ ! -d ".venv" ]; then
     python3 -m venv .venv
     .venv/bin/pip install --upgrade pip
     .venv/bin/pip install -r requirements.txt
+else
+    # Ensure any updated dependencies (like websockets) are installed in existing venv
+    if ! .venv/bin/python -c "import websockets" 2>/dev/null; then
+        echo "Installing updated dependencies from requirements.txt..."
+        .venv/bin/pip install -q -r requirements.txt
+    fi
 fi
 
 # Clean up any lingering process on port 8000

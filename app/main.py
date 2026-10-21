@@ -29,7 +29,7 @@ app.add_middleware(
 async def add_no_cache_headers(request, call_next):
     response = await call_next(request)
     path = request.url.path
-    if path == "/" or path.endswith((".html", ".css", ".js", ".png", ".svg", ".json", ".ico")):
+    if path == "/" or path.startswith("/icons/") or path.endswith((".html", ".css", ".js", ".png", ".svg", ".json", ".ico")):
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
@@ -219,4 +219,31 @@ async def startup_event():
 
 # Mount static folder
 static_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+
+import time
+import re
+BUILD_ID = int(time.time())
+
+@app.get("/", response_class=Response)
+async def serve_index():
+    index_file = os.path.join(static_path, "index.html")
+    with open(index_file, "r", encoding="utf-8") as f:
+        html = f.read()
+    
+    # Auto-inject cache-busting query strings so any browser refresh always loads latest code
+    html = re.sub(r'/style\.css(\?v=[^"\'\s]+)?', f'/style.css?v={BUILD_ID}', html)
+    html = re.sub(r'<script\s+src=["\']/app\.js(\?v=[^"\'\s]+)?["\']></script>', 
+                  f'<script>window.__APP_VERSION__ = "{BUILD_ID}";</script>\n  <script src="/app.js?v={BUILD_ID}"></script>', 
+                  html)
+    
+    return Response(
+        content=html,
+        media_type="text/html",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
+
 app.mount("/", StaticFiles(directory=static_path, html=True), name="static")

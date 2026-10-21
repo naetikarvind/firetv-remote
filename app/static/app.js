@@ -701,7 +701,9 @@
     apps.forEach((app) => {
       const card = document.createElement("div");
       card.className = "app-card";
-      const iconSrc = app.icon || `/icons/apps/${app.id}.png`;
+      const rawIcon = app.icon || `/icons/apps/${app.id}.png`;
+      const version = window.__APP_VERSION__ || "2.2.0";
+      const iconSrc = rawIcon.includes("?") ? rawIcon : `${rawIcon}?v=${version}`;
       card.innerHTML = `
         <div class="app-icon-container">
           <img src="${iconSrc}" class="app-icon-img" alt="${app.name}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />

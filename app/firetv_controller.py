@@ -102,7 +102,7 @@ POPULAR_APPS = [
     {"id": "kodi", "name": "Kodi", "package": "org.xbmc.kodi", "color": "#17B2E7", "icon": "/icons/apps/kodi.png"},
     {"id": "downloader", "name": "Downloader", "package": "info.androidtv.downloader", "fallback": "com.esaba.downloader", "color": "#FF6600", "icon": "/icons/apps/downloader.png"},
     {"id": "silk", "name": "Silk Browser", "package": "com.amazon.cloud9", "color": "#00A4B4", "icon": "/icons/apps/silk.png"},
-    {"id": "settings", "name": "Settings", "action": "android.settings.SETTINGS", "color": "#5A6270", "icon": "/icons/apps/settings.png"},
+    {"id": "settings", "name": "Settings", "action": "android.settings.SETTINGS", "color": "#5A6270", "icon": "/icons/apps/settings_v2.png"},
 ]
 
 def sanitize_adb_text(text: str) -> str:
