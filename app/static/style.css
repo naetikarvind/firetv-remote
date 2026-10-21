@@ -28,8 +28,8 @@
 
   /* Smart Length Engine Defaults (dynamically calibrated) */
   --app-actual-height: 100dvh;
-  --smart-dpad-size: clamp(210px, min(36dvh, 62cqi, 270px), 270px);
-  --smart-satellite-size: clamp(46px, 12cqi, 56px);
+  --smart-dpad-size: clamp(210px, min(36dvh, 60cqi, 260px), 260px);
+  --smart-satellite-size: clamp(48px, 12cqi, 56px);
   --smart-gap: 8px;
   --smart-tv-height: 360px;
 }
@@ -41,6 +41,11 @@
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* Universal Hidden Utility */
+.hidden {
+  display: none !important;
 }
 
 html, body {
@@ -71,7 +76,7 @@ body {
   max-height: var(--app-actual-height, 100dvh);
   display: flex;
   flex-direction: column;
-  padding: env(safe-area-inset-top, 6px) clamp(8px, 2cqi, 16px) env(safe-area-inset-bottom, 8px) clamp(8px, 2cqi, 16px);
+  padding: env(safe-area-inset-top, 6px) clamp(6px, 1.8cqi, 14px) env(safe-area-inset-bottom, 8px) clamp(6px, 1.8cqi, 14px);
   background: var(--bg-matte);
   transition: max-width 0.25s var(--ease-spring);
   container-type: inline-size;
@@ -208,8 +213,9 @@ body {
   align-items: center;
   flex: 1;
   min-height: 0;
-  padding: clamp(2px, 0.8dvh, 8px) clamp(4px, 1.5cqi, 12px);
+  padding: clamp(2px, 0.8dvh, 8px) clamp(2px, 1cqi, 8px);
   box-sizing: border-box;
+  margin: 0 auto;
 }
 
 .satellite-row {
@@ -218,14 +224,15 @@ body {
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .top-satellite-row {
-  padding: 0 clamp(20px, 6.5cqi, 38px);
+  padding: 0 clamp(24px, 7.5cqi, 40px);
 }
 
 .bottom-satellite-row {
-  padding: 0 clamp(20px, 6.5cqi, 38px);
+  padding: 0 clamp(24px, 7.5cqi, 40px);
 }
 
 .center-controller-row {
@@ -233,8 +240,9 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 clamp(4px, 1.5cqi, 12px);
+  padding: 0 clamp(4px, 1.2cqi, 10px);
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 /* ----------------------------------------------------
@@ -251,7 +259,7 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.38), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.38);
   transition: transform 0.12s var(--ease-spring), background 0.15s ease, color 0.15s ease;
   position: relative;
   flex-shrink: 0;
@@ -279,13 +287,13 @@ body {
   background: #ff5000 !important;
   border: none !important;
   color: #ffffff !important;
-  box-shadow: 0 6px 20px rgba(255, 80, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 4px 16px rgba(255, 80, 0, 0.4) !important;
 }
 
 .home-orange-btn:hover {
   background: #ff6219 !important;
   transform: translateY(-2px) scale(1.02) !important;
-  box-shadow: 0 8px 26px rgba(255, 80, 0, 0.6) !important;
+  box-shadow: 0 6px 22px rgba(255, 80, 0, 0.55) !important;
   color: #ffffff !important;
 }
 
@@ -293,15 +301,20 @@ body {
 .home-orange-btn.btn-pressed {
   transform: scale(0.90) !important;
   background: #e64500 !important;
-  box-shadow: 0 0 20px rgba(255, 80, 0, 0.7) !important;
+  box-shadow: 0 0 18px rgba(255, 80, 0, 0.6) !important;
 }
 
 /* ----------------------------------------------------
    Center Controller (D-Pad & Trackpad)
 ---------------------------------------------------- */
 .controller-wrapper {
-  width: var(--smart-dpad-size, 245px);
-  height: var(--smart-dpad-size, 245px);
+  width: var(--smart-dpad-size, 250px);
+  height: var(--smart-dpad-size, 250px);
+  min-width: var(--smart-dpad-size, 250px);
+  min-height: var(--smart-dpad-size, 250px);
+  max-width: var(--smart-dpad-size, 250px);
+  max-height: var(--smart-dpad-size, 250px);
+  aspect-ratio: 1 / 1;
   position: relative;
   display: flex;
   align-items: center;
@@ -309,9 +322,27 @@ body {
   flex-shrink: 0;
 }
 
+/* Strict Single-Controller Visibility Control */
+.controller-wrapper.dpad-mode #trackpadController {
+  display: none !important;
+}
+
+.controller-wrapper.dpad-mode #dpadController {
+  display: flex !important;
+}
+
+.controller-wrapper.trackpad-mode #dpadController {
+  display: none !important;
+}
+
+.controller-wrapper.trackpad-mode #trackpadController {
+  display: flex !important;
+}
+
 .dpad-controller {
   width: 100%;
   height: 100%;
+  aspect-ratio: 1 / 1;
   position: relative;
   display: flex;
   align-items: center;
@@ -390,6 +421,7 @@ body {
 .trackpad-controller {
   width: 100%;
   height: 100%;
+  aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -398,6 +430,7 @@ body {
 .trackpad-touch-surface {
   width: 100%;
   height: 100%;
+  aspect-ratio: 1 / 1;
   border-radius: 28px;
   background: #202328;
   border: 1.5px solid rgba(255, 255, 255, 0.06);
@@ -645,10 +678,6 @@ body {
   -webkit-backdrop-filter: blur(10px);
   padding: 16px;
   animation: modalFadeIn 0.2s ease-out;
-}
-
-.modal-overlay.hidden {
-  display: none !important;
 }
 
 @keyframes modalFadeIn {
@@ -1183,18 +1212,26 @@ body {
 /* Widescreen Studio Mode Rules */
 body.desktop-studio-active .app-container {
   max-width: 1440px !important;
+  padding: 12px 20px;
 }
 
 body.desktop-studio-active .main-content {
   display: grid;
-  grid-template-columns: minmax(360px, 420px) minmax(440px, 1fr) minmax(300px, 360px);
-  gap: 16px;
+  grid-template-columns: 380px minmax(440px, 1fr) minmax(320px, 360px);
+  gap: 20px;
   align-items: stretch;
+  height: 100%;
 }
 
 body.desktop-studio-active #tab-remote {
   display: flex !important;
   grid-column: 1;
+  background: #181a1d;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  padding: 8px 12px;
+  overflow: hidden;
 }
 
 body.desktop-studio-active #studioTvMonitor {

@@ -10,55 +10,55 @@
   <title>Fire TV Remote Pro</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
-  <link rel="stylesheet" href="/style.css?v=3.1.0">
+  <link rel="stylesheet" href="/style.css?v=3.2.0">
 </head>
 <body>
   <div id="app" class="app-container">
-    <!-- Top Header (Official Fire TV App Style) -->
-    <header class="app-top-bar">
-      <!-- Sleep / Screen Off Moon Button -->
-      <button id="sleepBtn" class="top-icon-btn" data-key="SLEEP" title="Sleep / Standby" aria-label="Sleep">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-          <path d="M12.3 2a10 10 0 0 0-1.9 19.8 10 10 0 0 0 10.6-10.6A10 10 0 0 0 12.3 2z"/>
-        </svg>
-      </button>
-
-      <!-- Center Device Bar in Electric Blue (Arvind's FireTVStick) -->
-      <div id="deviceBarBtn" class="top-device-pill" role="button" tabindex="0" title="Fire TV Device Status" aria-label="Device Status">
-        <svg class="device-stick-svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-          <rect x="2" y="7" width="18" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
-          <circle cx="6" cy="12" r="1.5"/>
-          <line x1="10" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="10" y1="14" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-        <span id="headerDeviceName" class="top-device-text">Arvind's FireTVStick</span>
-      </div>
-
-      <!-- Right 3-Dots Menu Button -->
-      <button id="dotsMenuBtn" class="top-icon-btn" title="More Options" aria-label="Options">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-          <circle cx="12" cy="5" r="2.2"/>
-          <circle cx="12" cy="12" r="2.2"/>
-          <circle cx="12" cy="19" r="2.2"/>
-        </svg>
-      </button>
-
-      <!-- Hidden compatibility buttons used by JS / Desktop Studio -->
-      <div class="hidden-compat-triggers" style="display:none;">
-        <button id="deviceAlertsBtn"><span id="devicePillText">Fire TV</span><span id="deviceAlertBadge">!</span></button>
-        <button id="statusBtn"><span id="statusText">Connected</span></button>
-        <button id="powerBtn" data-key="POWER"></button>
-        <button id="desktopModeBtn"></button>
-        <button id="mobileQrBtn"></button>
-        <button id="helpBtn"></button>
-      </div>
-    </header>
-
     <!-- Main Content Area -->
     <main class="main-content">
-      <!-- 1. REMOTE TAB (Default Full Screen View) -->
+      <!-- 1. REMOTE TAB (Self-Contained Remote Unit, Column 1 on Desktop) -->
       <section id="tab-remote" class="tab-pane active">
         <div class="remote-deck">
+          <!-- Top Header (Official Fire TV App Style) -->
+          <header class="app-top-bar">
+            <!-- Sleep / Screen Off Moon Button -->
+            <button id="sleepBtn" class="top-icon-btn" data-key="SLEEP" title="Sleep / Standby" aria-label="Sleep">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+            </button>
+
+            <!-- Center Device Bar in Electric Blue (Arvind's FireTVStick) -->
+            <div id="deviceBarBtn" class="top-device-pill" role="button" tabindex="0" title="Fire TV Device Status" aria-label="Device Status">
+              <svg class="device-stick-svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <rect x="2" y="7" width="18" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+                <circle cx="6" cy="12" r="1.5"/>
+                <line x1="10" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="10" y1="14" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <span id="headerDeviceName" class="top-device-text">Arvind's FireTVStick</span>
+            </div>
+
+            <!-- Right 3-Dots Menu Button -->
+            <button id="dotsMenuBtn" class="top-icon-btn" title="More Options" aria-label="Options">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <circle cx="12" cy="5" r="2.2"/>
+                <circle cx="12" cy="12" r="2.2"/>
+                <circle cx="12" cy="19" r="2.2"/>
+              </svg>
+            </button>
+
+            <!-- Hidden compatibility buttons used by JS / Desktop Studio -->
+            <div class="hidden-compat-triggers" style="display:none;">
+              <button id="deviceAlertsBtn"><span id="devicePillText">Fire TV</span><span id="deviceAlertBadge">!</span></button>
+              <button id="statusBtn"><span id="statusText">Connected</span></button>
+              <button id="powerBtn" data-key="POWER"></button>
+              <button id="desktopModeBtn"></button>
+              <button id="mobileQrBtn"></button>
+              <button id="helpBtn"></button>
+            </div>
+          </header>
+
           <!-- 6-Satellite Radial Remote Stage around Center Controller -->
           <div class="remote-stage">
             <!-- Top Satellite Row: Menu (Left) and Settings Sliders (Right) -->
@@ -81,7 +81,7 @@
               </button>
             </div>
 
-            <!-- Middle Row: Keyboard (Left), Center Controller, Mic (Right) -->
+            <!-- Middle Row: Keyboard (Left), Center Controller (Only 1 shown at a time), Mic (Right) -->
             <div class="center-controller-row">
               <button id="openKeyboardBtn" class="satellite-btn keyboard-btn" title="Keyboard Input" aria-label="Keyboard">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -621,6 +621,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=3.1.0"></script>
+  <script src="/app.js?v=3.2.0"></script>
 </body>
 </html>
