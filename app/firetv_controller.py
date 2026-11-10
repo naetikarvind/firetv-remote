@@ -30,13 +30,6 @@ KEYCODES = {
     "VOLUME_DOWN": 25,
     "MUTE": 164,
 
-    # Channels / TV
-    "CHANNEL_UP": 166,
-    "CHANNEL_DOWN": 167,
-    "LIVE_TV": 170,
-    "GUIDE": 172,
-    "TV": 170,
-
     # Playback
     "PLAY": 126,
     "PAUSE": 127,
@@ -102,10 +95,8 @@ LINUX_EVDEV_KEYCODES = {
 }
 
 POPULAR_APPS = [
-    {"id": "netflix", "name": "Netflix", "package": "com.netflix.ninja", "color": "#E50914", "icon": "/icons/apps/netflix.png"},
     {"id": "youtube", "name": "YouTube", "package": "com.amazon.firetv.youtube", "fallback": "com.google.android.youtube.tv", "color": "#FF0000", "icon": "/icons/apps/youtube.png"},
-    {"id": "zee5", "name": "ZEE5", "package": "com.graymatrix.did", "color": "#18181C", "icon": "/icons/apps/zee5.png"},
-    {"id": "sonyliv", "name": "Sony LIV", "package": "com.sonyliv", "color": "#0C1020", "icon": "/icons/apps/sonyliv.png"},
+    {"id": "netflix", "name": "Netflix", "package": "com.netflix.ninja", "color": "#E50914", "icon": "/icons/apps/netflix.png"},
     {"id": "prime_video", "name": "Prime Video", "package": "com.amazon.avod", "color": "#00A8E1", "icon": "/icons/apps/prime_video.png"},
     {"id": "disney", "name": "Disney+", "package": "com.disney.disneyplus", "color": "#113CCF", "icon": "/icons/apps/disney.png"},
     {"id": "spotify", "name": "Spotify", "package": "com.spotify.tv.android", "color": "#1DB954", "icon": "/icons/apps/spotify.png"},
@@ -148,6 +139,7 @@ class FireTVController:
         self.signer = CryptographySigner(self.priv_key_path)
 
         self.device: Optional[AdbDeviceTcp] = None
+        self.aux_device: Optional[AdbDeviceTcp] = None
         self.host: Optional[str] = None
         self.port: int = 5555
 
@@ -213,20 +205,35 @@ class FireTVController:
                 auth_prompt_shown = True
 
             def _do_connect():
-                dev = AdbDeviceTcp(host, port, default_transport_timeout_s=timeout)
-                dev.connect(
+                # 1. Primary dedicated connection: ultra-low latency key events
+                key_dev = AdbDeviceTcp(host, port, default_transport_timeout_s=1.5)
+                key_dev.connect(
                     rsa_keys=[self.signer],
                     transport_timeout_s=timeout,
                     auth_timeout_s=2.0,
                     auth_callback=_on_auth_callback
                 )
-                return dev
+
+                # 2. Secondary auxiliary connection: screenshots & background queries
+                aux_dev = None
+                try:
+                    aux_dev = AdbDeviceTcp(host, port, default_transport_timeout_s=6.0)
+                    aux_dev.connect(
+                        rsa_keys=[self.signer],
+                        transport_timeout_s=2.0,
+                        auth_timeout_s=2.0
+                    )
+                except Exception as ex:
+                    logger.warning(f"Secondary ADB connection optional, falling back to primary: {ex}")
+                    aux_dev = key_dev
+
+                return key_dev, aux_dev
 
             try:
-                self.device = await loop.run_in_executor(None, _do_connect)
+                self.device, self.aux_device = await loop.run_in_executor(None, _do_connect)
                 self.state = "connected"
                 self.last_error = ""
-                # Query basic info and detect fast input device
+                # Query basic info on aux_device
                 await self._refresh_info_unlocked()
                 self._detect_input_device_unlocked()
             except DeviceAuthError:
@@ -263,6 +270,12 @@ class FireTVController:
             except Exception:
                 pass
             self.device = None
+        if self.aux_device and self.aux_device is not self.device:
+            try:
+                self.aux_device.close()
+            except Exception:
+                pass
+            self.aux_device = None
         self.state = "disconnected"
         self.input_device_path = None
         self.device_info = {}
@@ -277,33 +290,22 @@ class FireTVController:
 
     async def send_key(self, key: str | int) -> Dict[str, Any]:
         """Send a key with sub-50ms ultra-low latency."""
-        if not self.device or self.state != "connected":
+        dev = self.device
+        if not dev or self.state != "connected":
             return {"success": False, "error": "Not connected to Fire TV", "state": self.state}
 
         key_str = str(key).upper().replace(" ", "_")
         keycode = KEYCODES.get(key_str, key) if isinstance(key, str) else key
         loop = asyncio.get_running_loop()
 
-        # If fast hardware event device is available
-        if self.input_device_path and key_str in LINUX_EVDEV_KEYCODES:
-            ev_code = LINUX_EVDEV_KEYCODES[key_str]
-            cmd = (
-                f"sendevent {self.input_device_path} 1 {ev_code} 1; "
-                f"sendevent {self.input_device_path} 0 0 0; "
-                f"sendevent {self.input_device_path} 1 {ev_code} 0; "
-                f"sendevent {self.input_device_path} 0 0 0"
-            )
-            is_fast = True
-        else:
-            # Asynchronous execution in Android shell:
-            # Spawns input keyevent in background without blocking ADB channel on JVM shutdown!
-            cmd = f"input keyevent {keycode} &"
-            is_fast = True
+        # Asynchronous background key injection in Android shell:
+        # Sub-50ms return, no blocking on JVM teardown
+        cmd = f"input keyevent {keycode} &"
 
         async with self._key_lock:
             try:
-                await loop.run_in_executor(None, self.device.shell, cmd)
-                return {"success": True, "key": key, "keycode": keycode, "fast": is_fast}
+                await loop.run_in_executor(None, dev.shell, cmd)
+                return {"success": True, "key": key, "keycode": keycode, "fast": True}
             except Exception as e:
                 logger.error(f"Error sending key {key}: {e}")
                 return {"success": False, "error": str(e)}
@@ -311,14 +313,15 @@ class FireTVController:
     async def send_text(self, text: str) -> Dict[str, Any]:
         """Type text into active input field on Fire TV."""
         async with self._lock:
-            if not self.device or self.state != "connected":
+            dev = self.aux_device or self.device
+            if not dev or self.state != "connected":
                 return {"success": False, "error": "Not connected to Fire TV"}
 
             safe_str = sanitize_adb_text(text)
             loop = asyncio.get_running_loop()
             try:
                 cmd = f"input text {safe_str}"
-                await loop.run_in_executor(None, self.device.shell, cmd)
+                await loop.run_in_executor(None, dev.shell, cmd)
                 return {"success": True, "text": text}
             except Exception as e:
                 logger.error(f"Error sending text: {e}")
@@ -327,7 +330,8 @@ class FireTVController:
     async def launch_app(self, app_id_or_package: str) -> Dict[str, Any]:
         """Launch a streaming app or Android intent."""
         async with self._lock:
-            if not self.device or self.state != "connected":
+            dev = self.aux_device or self.device
+            if not dev or self.state != "connected":
                 return {"success": False, "error": "Not connected to Fire TV"}
 
             # Check if it matches popular apps
@@ -347,7 +351,7 @@ class FireTVController:
                     # Custom package name
                     cmd = f"monkey -p {app_id_or_package} -c android.intent.category.LAUNCHER 1"
 
-                output = await loop.run_in_executor(None, self.device.shell, cmd)
+                output = await loop.run_in_executor(None, dev.shell, cmd)
                 return {"success": True, "target": app_id_or_package, "output": output}
             except Exception as e:
                 logger.error(f"Error launching app {app_id_or_package}: {e}")
@@ -355,7 +359,8 @@ class FireTVController:
 
     async def _refresh_info_unlocked(self) -> None:
         """Refresh device properties, wake state, and foreground app."""
-        if not self.device:
+        dev = self.aux_device or self.device
+        if not dev:
             return
         loop = asyncio.get_running_loop()
         try:
@@ -366,7 +371,7 @@ class FireTVController:
                 "echo '===POWER==='; dumpsys power | grep -m 1 mWakefulness; "
                 "echo '===FOCUS==='; dumpsys window | grep -m 1 -E 'mCurrentFocus|mFocusedApp'"
             )
-            raw = await loop.run_in_executor(None, self.device.shell, cmd)
+            raw = await loop.run_in_executor(None, dev.shell, cmd)
 
             info: Dict[str, Any] = {}
             parts = raw.split("===")
@@ -399,13 +404,14 @@ class FireTVController:
     async def take_screenshot(self) -> Optional[bytes]:
         """Capture screenshot from Fire TV as PNG bytes."""
         async with self._screenshot_lock:
-            if not self.device or self.state != "connected":
+            dev = self.aux_device or self.device
+            if not dev or self.state != "connected":
                 return None
             loop = asyncio.get_running_loop()
             try:
                 raw = await loop.run_in_executor(
                     None,
-                    lambda: self.device.shell("screencap -p", decode=False)
+                    lambda: dev.shell("screencap -p", decode=False)
                 )
                 if not raw or len(raw) < 100:
                     return None
@@ -432,6 +438,5 @@ class FireTVController:
             "port": self.port,
             "last_error": self.last_error,
             "info": self.device_info,
-            "device_name": "Arvind's FireTVStick",
             "apps": POPULAR_APPS
         }
